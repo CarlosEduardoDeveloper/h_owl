@@ -4,7 +4,7 @@ Base técnica para um aplicativo React Native com API Spring Boot e PostgreSQL. 
 
 ## Pré-requisitos
 
-- Java 21
+- Java 17
 - Maven 3.9+
 - Node.js 20+
 - pnpm

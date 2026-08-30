@@ -11,7 +11,7 @@ name = "Backend API"
 paths = ["/api", "/actuator", "/callback"]
 
 [services.development]
-run = "bash -lc 'export JAVA_HOME=$(dirname $(dirname $(readlink -f $(command -v javac)))) && cd backend && mvn spring-boot:run'"
+run = "bash -lc 'cd backend && mvn spring-boot:run'"
 
 [services.production.build]
 args = ["bash", "-lc", "cd backend && mvn -B clean package -DskipTests"]

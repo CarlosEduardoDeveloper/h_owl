@@ -5,7 +5,7 @@ Base técnica de um aplicativo React Native conectado a uma API Spring Boot e Po
 ## Run & Operate
 
 - `docker compose up --build` — start PostgreSQL and the Spring Boot backend
-- `cd backend && mvn test` — run backend tests with Java 21
+- `cd backend && mvn test` — run backend tests with Java 17
 - `pnpm --filter @workspace/mobile run dev` — start the Expo mobile app
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
@@ -17,7 +17,7 @@ Base técnica de um aplicativo React Native conectado a uma API Spring Boot e Po
 ## Stack
 
 - Mobile: React Native 0.81 + Expo SDK 54 + TypeScript strict
-- Backend: Java 21 + Spring Boot 4.0.0 + Maven
+- Backend: Java 17 + Spring Boot 4.0.0 + Maven
 - API: Spring Web MVC + Bean Validation + Actuator
 - DB: PostgreSQL 17 + Spring Data JPA
 - Migrations: Flyway
@@ -48,7 +48,7 @@ Product screens and business capabilities will be added only when their requirem
 
 ## Gotchas
 
-- The workflow uses the installed Java 21 JDK explicitly because the default Maven launcher may resolve an older JDK.
+- Replit: módulo `java-graalvm22.3` (Java 17) + Nix `jdk17`. Evite `jdk21` no ambiente.
 - A physical device cannot use its own `localhost` to reach the development machine; set `EXPO_PUBLIC_API_BASE_URL` to a reachable host address.
 
 ## Deploy (Autoscale)
