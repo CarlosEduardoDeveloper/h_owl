@@ -12,4 +12,9 @@ public interface TentativaQuizRepository extends JpaRepository<TentativaQuiz, UU
     List<TentativaQuiz> findByAtivoTrue();
 
     Optional<TentativaQuiz> findByIdAndAtivoTrue(UUID id);
+
+    Optional<TentativaQuiz> findByUsuario_IdAndQuiz_IdAndRealizadoEmIsNullAndAtivoTrue(
+            UUID usuarioId,
+            UUID quizId
+    );
 }

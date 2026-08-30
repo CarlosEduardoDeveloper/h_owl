@@ -12,4 +12,6 @@ public interface CorujaUsuarioRepository extends JpaRepository<CorujaUsuario, UU
     List<CorujaUsuario> findByAtivoTrue();
 
     Optional<CorujaUsuario> findByIdAndAtivoTrue(UUID id);
+
+    java.util.List<CorujaUsuario> findByUsuario_IdAndAtivoTrue(UUID usuarioId);
 }

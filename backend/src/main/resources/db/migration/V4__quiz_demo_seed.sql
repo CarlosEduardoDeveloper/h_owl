@@ -1,0 +1,43 @@
+-- Quiz demo para testes locais.
+
+INSERT INTO modulo (id, titulo, descricao, ordem, ativo, criado_em)
+VALUES (
+    'c3000001-0000-4000-8000-000000000001',
+    'Fundamentos',
+    'Módulo introdutório',
+    1,
+    TRUE,
+    NOW()
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO quiz (id, modulo_id, titulo, descricao, ordem, ativo, criado_em)
+VALUES (
+    'c3000002-0000-4000-8000-000000000001',
+    'c3000001-0000-4000-8000-000000000001',
+    'Quiz Bíblico Rápido',
+    'Três perguntas sobre passagens conhecidas.',
+    1,
+    TRUE,
+    NOW()
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO questao (id, quiz_id, enunciado, ordem, ativo, criado_em)
+VALUES
+    ('c3000003-0000-4000-8000-000000000001', 'c3000002-0000-4000-8000-000000000001', 'Quem construiu a arca?', 1, TRUE, NOW()),
+    ('c3000003-0000-4000-8000-000000000002', 'c3000002-0000-4000-8000-000000000001', 'Quantos discípulos Jesus escolheu?', 2, TRUE, NOW()),
+    ('c3000003-0000-4000-8000-000000000003', 'c3000002-0000-4000-8000-000000000001', 'Qual livro começa com "No princípio"?', 3, TRUE, NOW())
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO alternativa (id, questao_id, texto, correta, ordem, ativo, criado_em)
+VALUES
+    ('c3000004-0000-4000-8000-000000000001', 'c3000003-0000-4000-8000-000000000001', 'Noé', TRUE, 1, TRUE, NOW()),
+    ('c3000004-0000-4000-8000-000000000002', 'c3000003-0000-4000-8000-000000000001', 'Moisés', FALSE, 2, TRUE, NOW()),
+    ('c3000004-0000-4000-8000-000000000003', 'c3000003-0000-4000-8000-000000000001', 'Abraão', FALSE, 3, TRUE, NOW()),
+    ('c3000004-0000-4000-8000-000000000004', 'c3000003-0000-4000-8000-000000000002', '12', TRUE, 1, TRUE, NOW()),
+    ('c3000004-0000-4000-8000-000000000005', 'c3000003-0000-4000-8000-000000000002', '7', FALSE, 2, TRUE, NOW()),
+    ('c3000004-0000-4000-8000-000000000006', 'c3000003-0000-4000-8000-000000000003', 'Gênesis', TRUE, 1, TRUE, NOW()),
+    ('c3000004-0000-4000-8000-000000000007', 'c3000003-0000-4000-8000-000000000003', 'Êxodo', FALSE, 2, TRUE, NOW()),
+    ('c3000004-0000-4000-8000-000000000008', 'c3000003-0000-4000-8000-000000000003', 'João', FALSE, 3, TRUE, NOW())
+ON CONFLICT (id) DO NOTHING;

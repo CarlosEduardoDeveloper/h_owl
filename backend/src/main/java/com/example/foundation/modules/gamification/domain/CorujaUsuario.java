@@ -27,6 +27,15 @@ public class CorujaUsuario extends BaseEntity {
     @Column(name = "observacoes", columnDefinition = "TEXT")
     private String observacoes;
 
+    @Column(name = "poleiro_indice")
+    private Integer poleiroIndice;
+
+    @Column(name = "dias_sem_biscoito")
+    private Integer diasSemBiscoito;
+
+    @Column(name = "feliz")
+    private Boolean feliz;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
@@ -70,6 +79,30 @@ public class CorujaUsuario extends BaseEntity {
 
     public void setObservacoes(String observacoes) {
         this.observacoes = observacoes;
+    }
+
+    public Integer getPoleiroIndice() {
+        return poleiroIndice;
+    }
+
+    public void setPoleiroIndice(Integer poleiroIndice) {
+        this.poleiroIndice = poleiroIndice;
+    }
+
+    public Integer getDiasSemBiscoito() {
+        return diasSemBiscoito;
+    }
+
+    public void setDiasSemBiscoito(Integer diasSemBiscoito) {
+        this.diasSemBiscoito = diasSemBiscoito;
+    }
+
+    public Boolean getFeliz() {
+        return feliz;
+    }
+
+    public void setFeliz(Boolean feliz) {
+        this.feliz = feliz;
     }
 
     public Usuario getUsuario() {

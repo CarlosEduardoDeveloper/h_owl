@@ -3,6 +3,7 @@ package com.example.foundation.modules.user.dto;
 import java.util.UUID;
 
 import com.example.foundation.modules.gamification.domain.enums.OvoStatus;
+import com.example.foundation.modules.gamification.domain.enums.SaudeFloresta;
 import com.example.foundation.modules.study.domain.enums.IntencaoEstudo;
 import com.example.foundation.modules.study.domain.enums.SessaoEstudoStatus;
 
@@ -12,6 +13,9 @@ public record MeResumoResponse(
         Integer ofensiva,
         Long xpDiario,
         Integer ranking,
+        Integer saldoBiscoitos,
+        SaudeFloresta saudeFloresta,
+        String mensagemArvore,
         MeViveiroResumo viveiro,
         MeOvoResumo ovoAtivo,
         MeSessaoResumo sessaoAtual,
@@ -22,7 +26,8 @@ public record MeResumoResponse(
             UUID id,
             String nome,
             Integer nivel,
-            Long xpTotal
+            Long xpTotal,
+            Integer saldoBiscoitos
     ) {
     }
 

@@ -12,4 +12,6 @@ public interface QuestaoRepository extends JpaRepository<Questao, UUID> {
     List<Questao> findByAtivoTrue();
 
     Optional<Questao> findByIdAndAtivoTrue(UUID id);
+
+    List<Questao> findByQuiz_IdAndAtivoTrueOrderByOrdemAsc(UUID quizId);
 }

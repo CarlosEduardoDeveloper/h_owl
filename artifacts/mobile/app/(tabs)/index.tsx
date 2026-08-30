@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
@@ -29,9 +29,10 @@ export default function HomeScreen() {
   const userName = user?.displayName?.split(' ')[0] || 'Estudante';
   const userInitials = user?.avatarInitials || 'CS';
 
-  const ofensiva = resumo?.ofensiva ?? 7;
-  const xpDiario = resumo?.xpDiario ?? 320;
-  const ranking = resumo?.ranking ?? 42;
+  const ofensiva = resumo?.ofensiva ?? 0;
+  const xpDiario = resumo?.xpDiario ?? 0;
+  const ranking = resumo?.ranking ?? 0;
+  const mensagemArvore = resumo?.mensagemArvore;
 
   const trilha1 = resumo?.trilhasEmProgresso?.[0];
   const trilha2 = resumo?.trilhasEmProgresso?.[1];
@@ -44,6 +45,11 @@ export default function HomeScreen() {
     setShowProfileMenu(false);
     logout();
     router.replace('/(auth)/login');
+  };
+
+  const handleStartQuiz = () => {
+    setShowFocusSheet(false);
+    router.push('/quiz' as Href);
   };
 
   const handleStartFocus = (mode: string) => {
@@ -86,6 +92,12 @@ export default function HomeScreen() {
         </View>
 
         {/* 3 Stat Cards Row */}
+        {mensagemArvore ? (
+          <View style={styles.alertBanner}>
+            <Text style={styles.alertBannerText}>🌳 {mensagemArvore}</Text>
+          </View>
+        ) : null}
+
         <View style={styles.statsRow}>
           {/* Card 1: Ofensiva */}
           <View style={[styles.statCard, { backgroundColor: '#FDE3D2' }]}>
@@ -243,6 +255,17 @@ export default function HomeScreen() {
             >
               <Text style={styles.sheetOptionText}>Estudo Direcionado</Text>
             </Pressable>
+
+            {/* Option 3: Quiz */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.sheetOptionTextRow,
+                { opacity: pressed ? 0.7 : 1 },
+              ]}
+              onPress={handleStartQuiz}
+            >
+              <Text style={styles.sheetOptionText}>Quiz</Text>
+            </Pressable>
           </View>
         </Pressable>
       </Modal>
@@ -299,6 +322,21 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '700',
+  },
+  alertBanner: {
+    backgroundColor: '#FFF3CD',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#FFE08A',
+  },
+  alertBannerText: {
+    color: '#7A5C00',
+    fontWeight: '600',
+    fontSize: 14,
+    textAlign: 'center',
   },
   statsRow: {
     flexDirection: 'row',

@@ -4,4 +4,5 @@ public enum IntencaoEstudo {
     LEITURA_LIVRE,
     TRILHA,
     REVISAO,
+    QUIZ,
 }

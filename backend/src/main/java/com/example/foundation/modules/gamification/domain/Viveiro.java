@@ -24,6 +24,9 @@ public class Viveiro extends BaseEntity {
     @Column(name = "tema_visual")
     private String temaVisual;
 
+    @Column(name = "saldo_biscoitos")
+    private Integer saldoBiscoitos;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
@@ -59,6 +62,14 @@ public class Viveiro extends BaseEntity {
 
     public void setTemaVisual(String temaVisual) {
         this.temaVisual = temaVisual;
+    }
+
+    public Integer getSaldoBiscoitos() {
+        return saldoBiscoitos;
+    }
+
+    public void setSaldoBiscoitos(Integer saldoBiscoitos) {
+        this.saldoBiscoitos = saldoBiscoitos;
     }
 
     public Usuario getUsuario() {

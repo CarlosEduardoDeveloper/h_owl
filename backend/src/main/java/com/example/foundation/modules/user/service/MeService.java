@@ -6,8 +6,11 @@ import java.util.UUID;
 import com.example.foundation.modules.gamification.domain.OvoUsuario;
 import com.example.foundation.modules.gamification.domain.Viveiro;
 import com.example.foundation.modules.gamification.domain.enums.OvoStatus;
+import com.example.foundation.modules.gamification.domain.enums.SaudeFloresta;
 import com.example.foundation.modules.gamification.repository.OvoUsuarioRepository;
 import com.example.foundation.modules.gamification.repository.ViveiroRepository;
+import com.example.foundation.modules.gamification.service.BiscoitoService;
+import com.example.foundation.modules.gamification.service.FlorestaStreakService;
 import com.example.foundation.modules.learning.domain.ProgressoTrilha;
 import com.example.foundation.modules.learning.domain.Trilha;
 import com.example.foundation.modules.learning.repository.ProgressoTrilhaRepository;
@@ -39,6 +42,8 @@ public class MeService {
     private final ProgressoTrilhaRepository progressoTrilhaRepository;
     private final TrilhaRepository trilhaRepository;
     private final ConsultaSabioRepository consultaSabioRepository;
+    private final FlorestaStreakService florestaStreakService;
+    private final BiscoitoService biscoitoService;
 
     public MeService(
             UsuarioRepository usuarioRepository,
@@ -47,7 +52,9 @@ public class MeService {
             SessaoEstudoRepository sessaoEstudoRepository,
             ProgressoTrilhaRepository progressoTrilhaRepository,
             TrilhaRepository trilhaRepository,
-            ConsultaSabioRepository consultaSabioRepository
+            ConsultaSabioRepository consultaSabioRepository,
+            FlorestaStreakService florestaStreakService,
+            BiscoitoService biscoitoService
     ) {
         this.usuarioRepository = usuarioRepository;
         this.viveiroRepository = viveiroRepository;
@@ -56,6 +63,8 @@ public class MeService {
         this.progressoTrilhaRepository = progressoTrilhaRepository;
         this.trilhaRepository = trilhaRepository;
         this.consultaSabioRepository = consultaSabioRepository;
+        this.florestaStreakService = florestaStreakService;
+        this.biscoitoService = biscoitoService;
     }
 
     @Transactional(readOnly = true)
@@ -63,9 +72,16 @@ public class MeService {
         Usuario usuario = usuarioRepository.findByIdAndAtivoTrue(usuarioId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuario", usuarioId));
 
-        MeViveiroResumo viveiro = viveiroRepository.findFirstByUsuario_IdAndAtivoTrueOrderByCriadoEmDesc(usuarioId)
+        MeViveiroResumo viveiroResumo = viveiroRepository.findFirstByUsuario_IdAndAtivoTrueOrderByCriadoEmDesc(usuarioId)
                 .map(this::toViveiroResumo)
                 .orElse(null);
+
+        int saldoBiscoitos = viveiroResumo != null && viveiroResumo.saldoBiscoitos() != null
+                ? viveiroResumo.saldoBiscoitos()
+                : biscoitoService.obterOuCriarViveiro(usuario).getSaldoBiscoitos();
+
+        SaudeFloresta saudeFloresta = florestaStreakService.calcularSaudeFloresta(usuario);
+        String mensagemArvore = florestaStreakService.mensagemArvore(usuario);
 
         MeOvoResumo ovo = ovoUsuarioRepository
                 .findFirstByUsuario_IdAndStatusAndAtivoTrueOrderByCriadoEmDesc(usuarioId, OvoStatus.INCUBANDO)
@@ -89,10 +105,13 @@ public class MeService {
         return new MeResumoResponse(
                 usuario.getId(),
                 usuario.getEmail(),
+                usuario.getStreakAtual(),
                 null,
                 null,
-                null,
-                viveiro,
+                saldoBiscoitos,
+                saudeFloresta,
+                mensagemArvore,
+                viveiroResumo,
                 ovo,
                 sessao,
                 trilhas
@@ -119,7 +138,8 @@ public class MeService {
                 viveiro.getId(),
                 viveiro.getNome(),
                 viveiro.getNivel(),
-                viveiro.getXpTotal()
+                viveiro.getXpTotal(),
+                viveiro.getSaldoBiscoitos()
         );
     }
 

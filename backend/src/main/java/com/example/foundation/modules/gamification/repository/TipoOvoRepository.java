@@ -12,4 +12,6 @@ public interface TipoOvoRepository extends JpaRepository<TipoOvo, UUID> {
     List<TipoOvo> findByAtivoTrue();
 
     Optional<TipoOvo> findByIdAndAtivoTrue(UUID id);
+
+    Optional<TipoOvo> findFirstByDuracaoMinimaMinutosAndAtivoTrue(Integer duracaoMinimaMinutos);
 }

@@ -1,7 +1,10 @@
 package com.example.foundation.modules.study.service;
 
+import com.example.foundation.modules.gamification.dto.GamificacaoSessaoResponse;
+import com.example.foundation.modules.gamification.service.EstudoGamificacaoService;
 import com.example.foundation.modules.study.domain.SessaoEstudo;
 import com.example.foundation.modules.study.domain.enums.SessaoEstudoStatus;
+import com.example.foundation.modules.study.dto.SessaoEstudoConclusaoResponse;
 import com.example.foundation.modules.study.dto.SessaoEstudoConcluirRequest;
 import com.example.foundation.modules.study.dto.SessaoEstudoRequest;
 import com.example.foundation.modules.study.dto.SessaoEstudoResponse;
@@ -23,13 +26,16 @@ public class SessaoEstudoService {
 
     private final SessaoEstudoRepository repository;
     private final UsuarioRepository usuarioRepository;
+    private final EstudoGamificacaoService estudoGamificacaoService;
 
     public SessaoEstudoService(
             SessaoEstudoRepository repository,
-            UsuarioRepository usuarioRepository
+            UsuarioRepository usuarioRepository,
+            EstudoGamificacaoService estudoGamificacaoService
     ) {
         this.repository = repository;
         this.usuarioRepository = usuarioRepository;
+        this.estudoGamificacaoService = estudoGamificacaoService;
     }
 
     @Transactional(readOnly = true)
@@ -70,10 +76,12 @@ public class SessaoEstudoService {
         }
         entity.setStatus(SessaoEstudoStatus.EM_ANDAMENTO);
         entity.setInicioEm(Instant.now());
-        return SessaoEstudoMapper.toResponse(repository.save(entity));
+        SessaoEstudo salva = repository.save(entity);
+        estudoGamificacaoService.aoIniciarSessao(salva);
+        return SessaoEstudoMapper.toResponse(salva);
     }
 
-    public SessaoEstudoResponse concluir(UUID id, SessaoEstudoConcluirRequest request) {
+    public SessaoEstudoConclusaoResponse concluir(UUID id, SessaoEstudoConcluirRequest request) {
         SessaoEstudo entity = buscarEntidadeAtiva(id);
         if (entity.getStatus() != SessaoEstudoStatus.EM_ANDAMENTO) {
             throw new OperacaoInvalidaException("Sessão só pode ser concluída quando estiver EM_ANDAMENTO");
@@ -82,8 +90,12 @@ public class SessaoEstudoService {
         entity.setFimEm(Instant.now());
         if (request != null && request.duracaoRealMinutos() != null) {
             entity.setDuracaoRealMinutos(request.duracaoRealMinutos());
+        } else if (entity.getDuracaoPlanejadaMinutos() != null) {
+            entity.setDuracaoRealMinutos(entity.getDuracaoPlanejadaMinutos());
         }
-        return SessaoEstudoMapper.toResponse(repository.save(entity));
+        SessaoEstudo salva = repository.save(entity);
+        GamificacaoSessaoResponse gamificacao = estudoGamificacaoService.aoConcluirSessao(salva);
+        return SessaoEstudoConclusaoResponse.from(SessaoEstudoMapper.toResponse(salva), gamificacao);
     }
 
     public SessaoEstudoResponse interromper(UUID id) {
@@ -93,7 +105,9 @@ public class SessaoEstudoService {
         }
         entity.setStatus(SessaoEstudoStatus.INTERROMPIDA);
         entity.setFimEm(Instant.now());
-        return SessaoEstudoMapper.toResponse(repository.save(entity));
+        SessaoEstudo salva = repository.save(entity);
+        estudoGamificacaoService.aoInterromperSessao(salva);
+        return SessaoEstudoMapper.toResponse(salva);
     }
 
     private SessaoEstudo buscarEntidadeAtiva(UUID id) {

@@ -12,4 +12,6 @@ public interface AlternativaRepository extends JpaRepository<Alternativa, UUID> 
     List<Alternativa> findByAtivoTrue();
 
     Optional<Alternativa> findByIdAndAtivoTrue(UUID id);
+
+    List<Alternativa> findByQuestao_IdAndAtivoTrueOrderByOrdemAsc(UUID questaoId);
 }

@@ -12,11 +12,15 @@ export interface MeResumo {
   ofensiva?: number | null;
   xpDiario?: number | null;
   ranking?: number | null;
+  saldoBiscoitos?: number | null;
+  saudeFloresta?: 'NORMAL' | 'AMARELA' | 'CINZA' | 'SUJA' | null;
+  mensagemArvore?: string | null;
   viveiro?: {
     id: string;
     nome?: string;
     nivel?: number;
     xpTotal?: number;
+    saldoBiscoitos?: number;
   } | null;
   ovoAtivo?: {
     id: string;

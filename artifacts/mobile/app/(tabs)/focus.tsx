@@ -9,15 +9,27 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import Svg, { Circle, G } from 'react-native-svg';
 
+import { useHome } from '@/features/home/useHome';
+import {
+  resolveIntencao,
+  snapDuracao,
+  useFocusStudyApi,
+  type DuracaoPermitida,
+} from '@/features/study/useFocusStudyApi';
+
 export default function FocusScreen() {
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ intencao?: string | string[] }>();
+  const { data: resumo } = useHome();
+  const { iniciarSessao, concluirSessao, interromperSessao } = useFocusStudyApi();
 
-  const [targetMinutes, setTargetMinutes] = useState(25);
-  const [secondsLeft, setSecondsLeft] = useState(25 * 60);
+  const [targetMinutes, setTargetMinutes] = useState<DuracaoPermitida>(15);
+  const [secondsLeft, setSecondsLeft] = useState(15 * 60);
   const [hasStartedFocus, setHasStartedFocus] = useState(false);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [showFocusSheet, setShowFocusSheet] = useState(false);
@@ -48,7 +60,16 @@ export default function FocusScreen() {
             setIsTimerRunning(false);
             setHasStartedFocus(false);
             setFocusMode(null);
-            Alert.alert('Parabéns! 🎉', 'Seu tempo de estudo acabou e sua coruja chocou com sucesso!');
+            void (async () => {
+              try {
+                const resultado = await concluirSessao(targetMinutes);
+                const nome = resultado?.gamificacao?.corujaNome ?? 'Coruja';
+                const biscoito = resultado?.gamificacao?.biscoitoConcedido ? ' +1 biscoito 🍪' : '';
+                Alert.alert('Parabéns! 🎉', `${nome} chocou com sucesso!${biscoito}`);
+              } catch {
+                Alert.alert('Erro', 'Tempo concluído, mas falhou ao registrar no servidor.');
+              }
+            })();
             return targetMinutes * 60;
           }
           return prev - 1;
@@ -76,8 +97,9 @@ export default function FocusScreen() {
     if (mins < 1) mins = 1;
     if (mins > 60) mins = 60;
 
-    setTargetMinutes(mins);
-    setSecondsLeft(mins * 60);
+    const snapped = snapDuracao(mins);
+    setTargetMinutes(snapped);
+    setSecondsLeft(snapped * 60);
   };
 
   const panResponder = useRef(
@@ -95,9 +117,9 @@ export default function FocusScreen() {
     })
   ).current;
 
-  // Calculate ring progress ratio
+  // Calculate ring progress ratio (10, 15 ou 30 min)
   const totalSeconds = targetMinutes * 60;
-  const currentRatio = targetMinutes / 60;
+  const currentRatio = targetMinutes / 30;
 
   // Calculate stroke dashoffset for filled arc (during setup)
   const strokeDashoffset = circumference * (1 - currentRatio);
@@ -111,11 +133,18 @@ export default function FocusScreen() {
     setShowFocusSheet(true);
   };
 
-  const handleSelectFocusMode = (mode: 'livre' | 'direcionado') => {
+  const handleSelectFocusMode = async (mode: 'livre' | 'direcionado') => {
     setShowFocusSheet(false);
     setFocusMode(mode);
-    setHasStartedFocus(true);
-    setIsTimerRunning(true);
+
+    try {
+      const intencao = resolveIntencao(mode, params.intencao);
+      await iniciarSessao(intencao, targetMinutes);
+      setHasStartedFocus(true);
+      setIsTimerRunning(true);
+    } catch {
+      Alert.alert('Erro', 'Não foi possível iniciar a sessão de estudo.');
+    }
   };
 
   const handlePauseResume = () => {
@@ -126,13 +155,20 @@ export default function FocusScreen() {
     setShowCancelModal(true);
   };
 
-  const executeCancelFocus = () => {
+  const executeCancelFocus = async () => {
     setIsTimerRunning(false);
     setHasStartedFocus(false);
     setFocusMode(null);
     setSecondsLeft(targetMinutes * 60);
     setShowCancelModal(false);
+    try {
+      await interromperSessao();
+    } catch {
+      Alert.alert('Aviso', 'Sessão cancelada localmente, mas falhou ao sincronizar com o servidor.');
+    }
   };
+
+  const saldoBiscoitos = resumo?.saldoBiscoitos ?? resumo?.viveiro?.saldoBiscoitos ?? 0;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
@@ -144,7 +180,7 @@ export default function FocusScreen() {
 
         <View style={styles.coinBadge}>
           <Text style={styles.coinIcon}>🪙</Text>
-          <Text style={styles.coinText}>55</Text>
+          <Text style={styles.coinText}>{saldoBiscoitos}</Text>
         </View>
       </View>
 

@@ -3,8 +3,11 @@ package com.example.foundation.modules.user.service;
 import java.util.List;
 import java.util.UUID;
 
+import com.example.foundation.modules.gamification.domain.Viveiro;
 import com.example.foundation.modules.gamification.repository.OvoUsuarioRepository;
 import com.example.foundation.modules.gamification.repository.ViveiroRepository;
+import com.example.foundation.modules.gamification.service.BiscoitoService;
+import com.example.foundation.modules.gamification.service.FlorestaStreakService;
 import com.example.foundation.modules.learning.domain.ProgressoTrilha;
 import com.example.foundation.modules.learning.domain.Trilha;
 import com.example.foundation.modules.learning.repository.ProgressoTrilhaRepository;
@@ -47,6 +50,12 @@ class MeServiceTest {
     @Mock
     private ConsultaSabioRepository consultaSabioRepository;
 
+    @Mock
+    private FlorestaStreakService florestaStreakService;
+
+    @Mock
+    private BiscoitoService biscoitoService;
+
     @InjectMocks
     private MeService meService;
 
@@ -84,10 +93,18 @@ class MeServiceTest {
                 .thenReturn(List.of(progresso));
         when(trilhaRepository.findByIdAndAtivoTrue(trilhaId)).thenReturn(java.util.Optional.of(trilhaCompleta));
 
+        Viveiro viveiro = new Viveiro();
+        viveiro.setId(UUID.randomUUID());
+        viveiro.setSaldoBiscoitos(3);
+        when(biscoitoService.obterOuCriarViveiro(usuario)).thenReturn(viveiro);
+        when(florestaStreakService.calcularSaudeFloresta(usuario))
+                .thenReturn(com.example.foundation.modules.gamification.domain.enums.SaudeFloresta.NORMAL);
+        when(florestaStreakService.mensagemArvore(usuario)).thenReturn(null);
+
         MeResumoResponse resumo = meService.buscarResumo(usuarioId);
 
         assertThat(resumo.usuarioId()).isEqualTo(usuarioId);
-        assertThat(resumo.ofensiva()).isNull();
+        assertThat(resumo.saldoBiscoitos()).isEqualTo(3);
         assertThat(resumo.trilhasEmProgresso()).hasSize(1);
         assertThat(resumo.trilhasEmProgresso().getFirst().titulo()).isEqualTo("Livro de Mateus");
         assertThat(resumo.trilhasEmProgresso().getFirst().progressoPercentual()).isEqualTo(68);

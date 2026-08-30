@@ -18,4 +18,6 @@ public interface OvoUsuarioRepository extends JpaRepository<OvoUsuario, UUID> {
             UUID usuarioId,
             OvoStatus status
     );
+
+    Optional<OvoUsuario> findBySessaoEstudo_IdAndAtivoTrue(UUID sessaoEstudoId);
 }

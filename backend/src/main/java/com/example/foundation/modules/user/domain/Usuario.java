@@ -28,6 +28,20 @@ public class Usuario extends BaseEntity {
     @JoinColumn(name = "pessoa_id")
     private Pessoa pessoa;
 
+    @Column(name = "timezone")
+    private String timezone;
+
+    @Column(name = "ultimo_estudo_em")
+    private java.time.LocalDate ultimoEstudoEm;
+
+    @Column(name = "streak_atual")
+    private Integer streakAtual;
+
+    @Column(name = "melhor_streak")
+    private Integer melhorStreak;
+
+    @Column(name = "ultima_verificacao_diaria")
+    private java.time.LocalDate ultimaVerificacaoDiaria;
 
     public String getEmail() {
         return email;
@@ -59,5 +73,45 @@ public class Usuario extends BaseEntity {
 
     public void setPessoa(Pessoa pessoa) {
         this.pessoa = pessoa;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
+    }
+
+    public java.time.LocalDate getUltimoEstudoEm() {
+        return ultimoEstudoEm;
+    }
+
+    public void setUltimoEstudoEm(java.time.LocalDate ultimoEstudoEm) {
+        this.ultimoEstudoEm = ultimoEstudoEm;
+    }
+
+    public Integer getStreakAtual() {
+        return streakAtual;
+    }
+
+    public void setStreakAtual(Integer streakAtual) {
+        this.streakAtual = streakAtual;
+    }
+
+    public Integer getMelhorStreak() {
+        return melhorStreak;
+    }
+
+    public void setMelhorStreak(Integer melhorStreak) {
+        this.melhorStreak = melhorStreak;
+    }
+
+    public java.time.LocalDate getUltimaVerificacaoDiaria() {
+        return ultimaVerificacaoDiaria;
+    }
+
+    public void setUltimaVerificacaoDiaria(java.time.LocalDate ultimaVerificacaoDiaria) {
+        this.ultimaVerificacaoDiaria = ultimaVerificacaoDiaria;
     }
 }

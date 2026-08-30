@@ -1,5 +1,6 @@
 package com.example.foundation.modules.study.controller;
 
+import com.example.foundation.modules.study.dto.SessaoEstudoConclusaoResponse;
 import com.example.foundation.modules.study.dto.SessaoEstudoConcluirRequest;
 import com.example.foundation.modules.study.dto.SessaoEstudoRequest;
 import com.example.foundation.modules.study.dto.SessaoEstudoResponse;
@@ -59,7 +60,7 @@ public class SessaoEstudoController {
     }
 
     @PostMapping("/{id}/concluir")
-    public SessaoEstudoResponse concluir(
+    public SessaoEstudoConclusaoResponse concluir(
             @PathVariable UUID id,
             @RequestBody(required = false) SessaoEstudoConcluirRequest request
     ) {
