@@ -106,10 +106,10 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Center Isometric Tree Sanctuary Illustration */}
+        {/* Center Isometric Corujal Illustration */}
         <View style={styles.sanctuaryContainer}>
           <Image
-            source={require('@/assets/images/tree_sanctuary.jpg')}
+            source={require('@/assets/images/corujal.png')}
             style={styles.sanctuaryImage}
             resizeMode="contain"
           />
