@@ -5,7 +5,7 @@ router = "application"
 deploymentTarget = "autoscale"
 
 [deployment.postBuild]
-args = ["pnpm", "store", "prune"]
+args = ["bash", "-lc", "pnpm store prune && mvn -B -f backend/pom.xml clean package -DskipTests"]
 env = { "CI" = "true" }
 
 [workflows]

@@ -69,10 +69,24 @@ function getDeploymentDomain() {
     return stripProtocol(process.env.EXPO_PUBLIC_DOMAIN);
   }
 
+  if (process.env.REPL_SLUG) {
+    return `${process.env.REPL_SLUG}.replit.app`;
+  }
+
   console.error(
-    'ERROR: No deployment domain found. Set REPLIT_INTERNAL_APP_DOMAIN, REPLIT_DEV_DOMAIN, or EXPO_PUBLIC_DOMAIN',
+    'ERROR: No deployment domain found. Set REPLIT_INTERNAL_APP_DOMAIN, REPLIT_DEV_DOMAIN, EXPO_PUBLIC_DOMAIN, or REPL_SLUG',
   );
   process.exit(1);
+}
+
+function ensureApiBaseUrl(deploymentDomain) {
+  if (process.env.EXPO_PUBLIC_API_BASE_URL?.trim()) {
+    return;
+  }
+  process.env.EXPO_PUBLIC_API_BASE_URL = `https://${deploymentDomain}`;
+  console.log(
+    `Setting EXPO_PUBLIC_API_BASE_URL=${process.env.EXPO_PUBLIC_API_BASE_URL}`,
+  );
 }
 
 function prepareDirectories(timestamp) {
@@ -527,6 +541,7 @@ async function main() {
   setupSignalHandlers();
 
   const domain = getDeploymentDomain();
+  ensureApiBaseUrl(domain);
   const expoPublicReplId = getExpoPublicReplId();
   const baseUrl = `https://${domain}`;
   const timestamp = `${Date.now()}-${process.pid}`;

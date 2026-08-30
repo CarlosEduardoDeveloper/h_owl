@@ -1,0 +1,29 @@
+kind = "api"
+previewPath = "/api/v1/system/status"
+title = "Backend API (Spring Boot)"
+description = "API Spring Boot com PostgreSQL, Flyway e autenticação MVP."
+version = "1.0.0"
+id = "backend"
+
+[[services]]
+localPort = 8080
+name = "Backend API"
+paths = ["/api", "/actuator", "/callback"]
+
+[services.development]
+run = "bash -lc 'export JAVA_HOME=$(dirname $(dirname $(readlink -f $(command -v javac)))) && cd backend && mvn spring-boot:run'"
+
+[services.production.build]
+args = ["mvn", "-B", "-f", "backend/pom.xml", "clean", "package", "-DskipTests"]
+
+[services.production.build.env]
+NODE_ENV = "production"
+
+[services.production.run]
+args = ["java", "-jar", "backend/target/foundation-backend-0.0.1-SNAPSHOT.jar"]
+
+[services.production.run.env]
+PORT = "8080"
+
+[services.production.health.startup]
+path = "/actuator/health"

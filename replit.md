@@ -51,6 +51,22 @@ Product screens and business capabilities will be added only when their requirem
 - The workflow uses the installed Java 21 JDK explicitly because the default Maven launcher may resolve an older JDK.
 - A physical device cannot use its own `localhost` to reach the development machine; set `EXPO_PUBLIC_API_BASE_URL` to a reachable host address.
 
+## Deploy (Autoscale)
+
+Dois artifacts sobem em produção:
+
+- `backend/` — Spring Boot na porta **8080** (`/actuator/health`)
+- `artifacts/mobile/` — landing Expo na porta **18115** (`/mobile/`, health `/status`)
+
+Secrets obrigatórios no deploy:
+
+- `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`
+- `YVP_APP_KEY`, `YVP_CALLBACK_URL` (URL pública do Repl + `/callback`)
+- `CORS_ALLOWED_ORIGINS` — inclua `https://<seu-repl>.replit.app` e `https://<seu-repl>.replit.dev`
+- `EXPO_PUBLIC_API_BASE_URL` — opcional; o build mobile deriva de `REPLIT_INTERNAL_APP_DOMAIN` se ausente
+
+O stub `artifacts/api-server` não é mais deployado; a API real é o Spring Boot.
+
 ## Pointers
 
 - See `README.md` for setup and environment variables.
