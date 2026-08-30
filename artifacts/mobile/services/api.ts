@@ -1,12 +1,9 @@
-import { setBaseUrl } from '@workspace/api-client-react';
-
-const configuredBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
-
-export const apiBaseUrl =
-  configuredBaseUrl && configuredBaseUrl.length > 0
-    ? configuredBaseUrl.replace(/\/+$/, '')
-    : 'http://localhost:8080';
+/**
+ * @deprecated Use `@/services/apiClient` e `@/config/env`.
+ * Mantido apenas para compatibilidade com imports antigos.
+ */
+export { getApiHostUrl as apiBaseUrl } from '@/config/env';
 
 export function configureApiClient(): void {
-  setBaseUrl(apiBaseUrl);
+  // Credenciais e base URL são resolvidas em apiClient/env sob demanda.
 }

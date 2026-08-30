@@ -1,13 +1,17 @@
 package com.example.foundation.modules.study.service;
 
 import com.example.foundation.modules.study.domain.SessaoEstudo;
+import com.example.foundation.modules.study.domain.enums.SessaoEstudoStatus;
+import com.example.foundation.modules.study.dto.SessaoEstudoConcluirRequest;
 import com.example.foundation.modules.study.dto.SessaoEstudoRequest;
 import com.example.foundation.modules.study.dto.SessaoEstudoResponse;
 import com.example.foundation.modules.study.mapper.SessaoEstudoMapper;
 import com.example.foundation.modules.study.repository.SessaoEstudoRepository;
 import com.example.foundation.modules.user.domain.Usuario;
 import com.example.foundation.modules.user.repository.UsuarioRepository;
+import com.example.foundation.shared.exception.OperacaoInvalidaException;
 import com.example.foundation.shared.exception.RecursoNaoEncontradoException;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -57,6 +61,39 @@ public class SessaoEstudoService {
         SessaoEstudo entity = buscarEntidadeAtiva(id);
         entity.excluirLogicamente();
         repository.save(entity);
+    }
+
+    public SessaoEstudoResponse iniciar(UUID id) {
+        SessaoEstudo entity = buscarEntidadeAtiva(id);
+        if (entity.getStatus() != null && entity.getStatus() != SessaoEstudoStatus.CRIADA) {
+            throw new OperacaoInvalidaException("Sessão só pode ser iniciada a partir do status CRIADA");
+        }
+        entity.setStatus(SessaoEstudoStatus.EM_ANDAMENTO);
+        entity.setInicioEm(Instant.now());
+        return SessaoEstudoMapper.toResponse(repository.save(entity));
+    }
+
+    public SessaoEstudoResponse concluir(UUID id, SessaoEstudoConcluirRequest request) {
+        SessaoEstudo entity = buscarEntidadeAtiva(id);
+        if (entity.getStatus() != SessaoEstudoStatus.EM_ANDAMENTO) {
+            throw new OperacaoInvalidaException("Sessão só pode ser concluída quando estiver EM_ANDAMENTO");
+        }
+        entity.setStatus(SessaoEstudoStatus.CONCLUIDA);
+        entity.setFimEm(Instant.now());
+        if (request != null && request.duracaoRealMinutos() != null) {
+            entity.setDuracaoRealMinutos(request.duracaoRealMinutos());
+        }
+        return SessaoEstudoMapper.toResponse(repository.save(entity));
+    }
+
+    public SessaoEstudoResponse interromper(UUID id) {
+        SessaoEstudo entity = buscarEntidadeAtiva(id);
+        if (entity.getStatus() != SessaoEstudoStatus.EM_ANDAMENTO) {
+            throw new OperacaoInvalidaException("Sessão só pode ser interrompida quando estiver EM_ANDAMENTO");
+        }
+        entity.setStatus(SessaoEstudoStatus.INTERROMPIDA);
+        entity.setFimEm(Instant.now());
+        return SessaoEstudoMapper.toResponse(repository.save(entity));
     }
 
     private SessaoEstudo buscarEntidadeAtiva(UUID id) {

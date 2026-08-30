@@ -97,6 +97,19 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(OperacaoInvalidaException.class)
+    public ResponseEntity<ApiErrorResponse> handleOperacaoInvalida(
+            OperacaoInvalidaException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
     @ExceptionHandler(YouVersionNaoConfiguradoException.class)
     public ResponseEntity<ApiErrorResponse> handleYouVersionNotConfigured(
             YouVersionNaoConfiguradoException exception,

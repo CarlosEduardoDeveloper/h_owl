@@ -12,4 +12,6 @@ public interface ViveiroRepository extends JpaRepository<Viveiro, UUID> {
     List<Viveiro> findByAtivoTrue();
 
     Optional<Viveiro> findByIdAndAtivoTrue(UUID id);
+
+    Optional<Viveiro> findFirstByUsuario_IdAndAtivoTrueOrderByCriadoEmDesc(UUID usuarioId);
 }

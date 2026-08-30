@@ -19,13 +19,23 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { login } = useAuth();
 
-  const [email, setEmail] = useState('jane.houston@email.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSignIn = async () => {
-    await login(email, password);
-    router.replace('/(tabs)');
+    setErrorMessage(null);
+    setIsSubmitting(true);
+    try {
+      await login(email, password);
+      router.replace('/(tabs)');
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Falha ao entrar');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -92,14 +102,18 @@ export default function LoginScreen() {
 
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
+            {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
             <Pressable
               style={({ pressed }) => [
                 styles.primaryButton,
-                { opacity: pressed ? 0.9 : 1 },
+                { opacity: pressed || isSubmitting ? 0.9 : 1 },
               ]}
               onPress={handleSignIn}
+              disabled={isSubmitting}
             >
-              <Text style={styles.primaryButtonText}>Sign In</Text>
+              <Text style={styles.primaryButtonText}>
+                {isSubmitting ? 'Entrando...' : 'Sign In'}
+              </Text>
             </Pressable>
 
             <Pressable
@@ -202,6 +216,12 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     gap: 14,
+  },
+  errorText: {
+    color: '#B42318',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   primaryButton: {
     backgroundColor: '#ED5B0A',

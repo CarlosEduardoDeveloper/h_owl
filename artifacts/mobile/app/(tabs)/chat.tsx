@@ -12,44 +12,19 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
-interface Message {
-  id: string;
-  sender: 'user' | 'sage';
-  text: string;
-}
+import { useSageChat } from '@/features/sage/useSageChat';
 
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const [inputText, setInputText] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      sender: 'sage',
-      text: 'Paz seja com você! Sou a Coruja Sábia, seu assistente de estudos. Como posso ajudar suas reflexões hoje?',
-    },
-  ]);
+  const { messages, isSending, enviarMensagem } = useSageChat();
 
   const handleSend = () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || isSending) return;
 
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      sender: 'user',
-      text: inputText.trim(),
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
+    const texto = inputText.trim();
     setInputText('');
-
-    // Simulate Sage AI response
-    setTimeout(() => {
-      const sageMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        sender: 'sage',
-        text: 'Excelente reflexão! Esse conceito bíblico conecta-se ao contexto histórico e ao significado espiritual original.',
-      };
-      setMessages((prev) => [...prev, sageMsg]);
-    }, 1000);
+    void enviarMensagem(texto);
   };
 
   return (

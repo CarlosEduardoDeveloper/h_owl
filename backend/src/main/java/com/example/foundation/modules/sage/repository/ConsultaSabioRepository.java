@@ -12,4 +12,6 @@ public interface ConsultaSabioRepository extends JpaRepository<ConsultaSabio, UU
     List<ConsultaSabio> findByAtivoTrue();
 
     Optional<ConsultaSabio> findByIdAndAtivoTrue(UUID id);
+
+    List<ConsultaSabio> findByUsuario_IdAndAtivoTrueOrderByCriadoEmAsc(UUID usuarioId);
 }

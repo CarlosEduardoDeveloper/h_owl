@@ -12,17 +12,33 @@ import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
+import { useHome } from '@/features/home/useHome';
+
+const CURSO_PADRAO_1 = { titulo: 'Livro de Mateus', progresso: 68 };
+const CURSO_PADRAO_2 = { titulo: 'Glossário Judaico', progresso: 34 };
 
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
+  const { data: resumo } = useHome();
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showFocusSheet, setShowFocusSheet] = useState(false);
 
-  const userName = user?.name?.split(' ')[0] || 'Jane';
-  const userInitials = user?.avatarInitials || 'JH';
+  const userName = user?.displayName?.split(' ')[0] || 'Estudante';
+  const userInitials = user?.avatarInitials || 'CS';
+
+  const ofensiva = resumo?.ofensiva ?? 7;
+  const xpDiario = resumo?.xpDiario ?? 320;
+  const ranking = resumo?.ranking ?? 42;
+
+  const trilha1 = resumo?.trilhasEmProgresso?.[0];
+  const trilha2 = resumo?.trilhasEmProgresso?.[1];
+  const curso1Titulo = trilha1?.titulo ?? CURSO_PADRAO_1.titulo;
+  const curso1Progresso = trilha1?.progressoPercentual ?? CURSO_PADRAO_1.progresso;
+  const curso2Titulo = trilha2?.titulo ?? CURSO_PADRAO_2.titulo;
+  const curso2Progresso = trilha2?.progressoPercentual ?? CURSO_PADRAO_2.progresso;
 
   const handleLogout = () => {
     setShowProfileMenu(false);
@@ -32,7 +48,13 @@ export default function HomeScreen() {
 
   const handleStartFocus = (mode: string) => {
     setShowFocusSheet(false);
-    router.push('/(tabs)/focus');
+    router.push({
+      pathname: '/(tabs)/focus',
+      params: {
+        intencao: mode === 'direcionado' ? 'TRILHA' : 'LEITURA_LIVRE',
+        referenciaUsfm: mode === 'direcionado' ? 'MAT.1.1' : 'JHN.3.16',
+      },
+    });
   };
 
   return (
@@ -67,19 +89,19 @@ export default function HomeScreen() {
         <View style={styles.statsRow}>
           {/* Card 1: Ofensiva */}
           <View style={[styles.statCard, { backgroundColor: '#FDE3D2' }]}>
-            <Text style={styles.statValue}>7 🔥</Text>
+            <Text style={styles.statValue}>{ofensiva} 🔥</Text>
             <Text style={styles.statLabel}>Ofensiva</Text>
           </View>
 
           {/* Card 2: XP Diário */}
           <View style={[styles.statCard, { backgroundColor: '#D7F9EB' }]}>
-            <Text style={styles.statValue}>320</Text>
+            <Text style={styles.statValue}>{xpDiario}</Text>
             <Text style={styles.statLabel}>XP Diário</Text>
           </View>
 
           {/* Card 3: Ranquing */}
           <View style={[styles.statCard, { backgroundColor: '#EBE4FF' }]}>
-            <Text style={styles.statValue}>#42</Text>
+            <Text style={styles.statValue}>#{ranking}</Text>
             <Text style={styles.statLabel}>Ranquing</Text>
           </View>
         </View>
@@ -109,12 +131,12 @@ export default function HomeScreen() {
               <Feather name="book-open" size={20} color="#ED5B0A" />
             </View>
             <View style={styles.courseContent}>
-              <Text style={styles.courseTitle}>Livro de Mateus</Text>
+              <Text style={styles.courseTitle}>{curso1Titulo}</Text>
               <View style={styles.progressRow}>
                 <View style={styles.progressBarBg}>
-                  <View style={[styles.progressBarFill, { width: '68%', backgroundColor: '#ED5B0A' }]} />
+                  <View style={[styles.progressBarFill, { width: `${curso1Progresso}%`, backgroundColor: '#ED5B0A' }]} />
                 </View>
-                <Text style={styles.progressPercent}>68%</Text>
+                <Text style={styles.progressPercent}>{curso1Progresso}%</Text>
               </View>
             </View>
           </Pressable>
@@ -131,12 +153,12 @@ export default function HomeScreen() {
               <Feather name="book-open" size={20} color="#7C3AED" />
             </View>
             <View style={styles.courseContent}>
-              <Text style={styles.courseTitle}>Glossário Judaico</Text>
+              <Text style={styles.courseTitle}>{curso2Titulo}</Text>
               <View style={styles.progressRow}>
                 <View style={styles.progressBarBg}>
-                  <View style={[styles.progressBarFill, { width: '34%', backgroundColor: '#7C3AED' }]} />
+                  <View style={[styles.progressBarFill, { width: `${curso2Progresso}%`, backgroundColor: '#7C3AED' }]} />
                 </View>
-                <Text style={styles.progressPercent}>34%</Text>
+                <Text style={styles.progressPercent}>{curso2Progresso}%</Text>
               </View>
             </View>
           </Pressable>
@@ -150,8 +172,8 @@ export default function HomeScreen() {
           onPress={() => setShowProfileMenu(false)}
         >
           <View style={[styles.profileMenuCard, { top: insets.top + 72 }]}>
-            <Text style={styles.menuUserName}>{user?.name || 'Jane Houston'}</Text>
-            <Text style={styles.menuUserEmail}>{user?.email || 'jane.houston@email.com'}</Text>
+            <Text style={styles.menuUserName}>{user?.displayName || 'Estudante'}</Text>
+            <Text style={styles.menuUserEmail}>{user?.usuario || ''}</Text>
 
             <View style={styles.menuDivider} />
 

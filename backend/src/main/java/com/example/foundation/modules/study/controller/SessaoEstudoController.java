@@ -1,5 +1,6 @@
 package com.example.foundation.modules.study.controller;
 
+import com.example.foundation.modules.study.dto.SessaoEstudoConcluirRequest;
 import com.example.foundation.modules.study.dto.SessaoEstudoRequest;
 import com.example.foundation.modules.study.dto.SessaoEstudoResponse;
 import com.example.foundation.modules.study.service.SessaoEstudoService;
@@ -50,5 +51,23 @@ public class SessaoEstudoController {
     public ResponseEntity<Void> excluir(@PathVariable UUID id) {
         service.excluir(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/iniciar")
+    public SessaoEstudoResponse iniciar(@PathVariable UUID id) {
+        return service.iniciar(id);
+    }
+
+    @PostMapping("/{id}/concluir")
+    public SessaoEstudoResponse concluir(
+            @PathVariable UUID id,
+            @RequestBody(required = false) SessaoEstudoConcluirRequest request
+    ) {
+        return service.concluir(id, request);
+    }
+
+    @PostMapping("/{id}/interromper")
+    public SessaoEstudoResponse interromper(@PathVariable UUID id) {
+        return service.interromper(id);
     }
 }

@@ -12,4 +12,6 @@ public interface ProgressoTrilhaRepository extends JpaRepository<ProgressoTrilha
     List<ProgressoTrilha> findByAtivoTrue();
 
     Optional<ProgressoTrilha> findByIdAndAtivoTrue(UUID id);
+
+    List<ProgressoTrilha> findByUsuario_IdAndAtivoTrueOrderByUltimoAcessoEmDesc(UUID usuarioId);
 }

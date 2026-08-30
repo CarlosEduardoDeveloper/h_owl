@@ -1,72 +1,158 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-export interface UserProfile {
-  name: string;
-  email: string;
-  avatarInitials: string;
-}
+import * as authService from '@/features/auth/authService';
+import * as authStorage from '@/features/auth/authStorage';
+import type { StoredSession, UserProfile } from '@/features/auth/types';
+import { ApiClientError, setApiCredentials } from '@/services/apiClient';
 
 interface AuthContextType {
   user: UserProfile | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, birthDate?: string) => Promise<void>;
-  logout: () => void;
+  isLoading: boolean;
+  login: (usuario: string, senha: string) => Promise<void>;
+  register: (displayName: string, usuario: string, senha: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function buildDisplayName(displayName: string | undefined, usuario: string): string {
+  if (displayName?.trim()) {
+    return displayName.trim();
+  }
+  const localPart = usuario.split('@')[0] ?? usuario;
+  return localPart.charAt(0).toUpperCase() + localPart.slice(1);
+}
+
+function buildInitials(displayName: string): string {
+  const parts = displayName.split(' ').filter(Boolean);
+  if (parts.length === 0) {
+    return 'CS';
+  }
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
+function toUserProfile(session: StoredSession): UserProfile {
+  const displayName = buildDisplayName(session.displayName, session.usuario);
+  return {
+    usuarioId: session.usuarioId,
+    usuario: session.usuario,
+    displayName,
+    avatarInitials: buildInitials(displayName),
+  };
+}
+
+function applySession(session: StoredSession): UserProfile {
+  setApiCredentials({ usuario: session.usuario, senha: session.senha });
+  return toUserProfile(session);
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Default to Jane Houston for smooth previewing matching the attached screenshots
-  const [user, setUser] = useState<UserProfile | null>({
-    name: 'Jane Houston',
-    email: 'jane.houston@email.com',
-    avatarInitials: 'JH',
-  });
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = async (email: string, password: string) => {
-    const namePart = email.split('@')[0] || 'User';
-    const initials = namePart.slice(0, 2).toUpperCase();
-    setUser({
-      name: email === 'jane.houston@email.com' ? 'Jane Houston' : namePart,
-      email: email,
-      avatarInitials: email === 'jane.houston@email.com' ? 'JH' : initials,
-    });
-  };
+  useEffect(() => {
+    let active = true;
 
-  const register = async (name: string, email: string, password: string, birthDate?: string) => {
-    const initials = name
-      .split(' ')
-      .filter(Boolean)
-      .map((n) => n[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase() || 'JH';
+    async function restoreSession() {
+      try {
+        const stored = await authStorage.loadStoredSession();
+        if (!stored) {
+          return;
+        }
 
-    setUser({
-      name: name || 'Jane Houston',
-      email: email || 'jane.houston@email.com',
-      avatarInitials: initials,
-    });
-  };
+        applySession(stored);
+        await authService.buscarSessao();
 
-  const logout = () => {
-    setUser(null);
-  };
+        if (active) {
+          setUser(toUserProfile(stored));
+        }
+      } catch {
+        await authStorage.clearStoredSession();
+        setApiCredentials(null);
+        if (active) {
+          setUser(null);
+        }
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    }
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        login,
-        register,
-        logout,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+    void restoreSession();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const persistSession = useCallback(async (session: StoredSession) => {
+    await authStorage.saveStoredSession(session);
+    setUser(applySession(session));
+  }, []);
+
+  const login = useCallback(
+    async (usuario: string, senha: string) => {
+      try {
+        const response = await authService.login(usuario, senha);
+        await persistSession({
+          usuarioId: response.usuarioId,
+          usuario: response.usuario,
+          senha,
+        });
+      } catch (error) {
+        if (error instanceof ApiClientError && error.status === 401) {
+          throw new Error('Usuário ou senha inválidos');
+        }
+        throw error instanceof Error ? error : new Error('Falha ao entrar');
+      }
+    },
+    [persistSession],
   );
+
+  const register = useCallback(
+    async (displayName: string, usuario: string, senha: string) => {
+      try {
+        const response = await authService.registrar(usuario, senha);
+        await persistSession({
+          usuarioId: response.usuarioId,
+          usuario: response.usuario,
+          senha,
+          displayName,
+        });
+      } catch (error) {
+        if (error instanceof ApiClientError && error.status === 409) {
+          throw new Error('Usuário já cadastrado');
+        }
+        throw error instanceof Error ? error : new Error('Falha ao registrar');
+      }
+    },
+    [persistSession],
+  );
+
+  const logout = useCallback(async () => {
+    await authStorage.clearStoredSession();
+    setApiCredentials(null);
+    setUser(null);
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      user,
+      isAuthenticated: user !== null,
+      isLoading,
+      login,
+      register,
+      logout,
+    }),
+    [user, isLoading, login, register, logout],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

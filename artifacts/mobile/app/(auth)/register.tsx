@@ -17,15 +17,29 @@ export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
   const { register } = useAuth();
 
-  const [name, setName] = useState('Jane Houston');
-  const [email, setEmail] = useState('jane.houston@email.com');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [birthDate, setBirthDate] = useState('');
-  const [agreeTerms, setAgreeTerms] = useState(true);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleRegister = async () => {
-    await register(name, email, password, birthDate);
-    router.replace('/(tabs)');
+    setErrorMessage(null);
+    if (!agreeTerms) {
+      setErrorMessage('Aceite os termos para continuar');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await register(name, email, password);
+      router.replace('/(tabs)');
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Falha ao registrar');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -122,14 +136,18 @@ export default function RegisterScreen() {
           </Pressable>
 
           {/* Primary Action Button */}
+          {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
           <Pressable
             style={({ pressed }) => [
               styles.primaryButton,
-              { opacity: pressed ? 0.9 : 1 },
+              { opacity: pressed || isSubmitting ? 0.9 : 1 },
             ]}
             onPress={handleRegister}
+            disabled={isSubmitting}
           >
-            <Text style={styles.primaryButtonText}>Criar minha conta</Text>
+            <Text style={styles.primaryButtonText}>
+              {isSubmitting ? 'Criando conta...' : 'Criar minha conta'}
+            </Text>
           </Pressable>
 
           {/* Footer Login Link */}
@@ -259,6 +277,13 @@ const styles = StyleSheet.create({
     color: '#8C7C6D',
     lineHeight: 19,
     fontWeight: '500',
+  },
+  errorText: {
+    color: '#B42318',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 12,
   },
   primaryButton: {
     backgroundColor: '#ED5B0A',

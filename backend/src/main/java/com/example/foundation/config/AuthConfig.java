@@ -12,8 +12,8 @@ import org.springframework.core.Ordered;
 public class AuthConfig {
 
     @Bean
-    AuthFilter authFilter(AuthService authService, ObjectMapper objectMapper) {
-        return new AuthFilter(authService, objectMapper);
+    AuthFilter authFilter(AuthService authService) {
+        return new AuthFilter(authService, new ObjectMapper());
     }
 
     @Bean

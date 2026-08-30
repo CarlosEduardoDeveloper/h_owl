@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Image,
   Pressable,
@@ -9,16 +9,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
+import { useFocusSession } from '@/features/study/useFocusSession';
+import { useBibleReader } from '@/features/bible/useBibleReader';
+
 export default function FocusScreen() {
   const insets = useSafeAreaInsets();
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(25 * 60);
-
-  const formatTime = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
+  const { secondsLeft, isTimerRunning, toggleSession, formatTime } = useFocusSession();
+  useBibleReader();
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
@@ -50,7 +47,9 @@ export default function FocusScreen() {
             styles.playButton,
             { opacity: pressed ? 0.85 : 1 },
           ]}
-          onPress={() => setIsTimerRunning(!isTimerRunning)}
+          onPress={() => {
+            void toggleSession();
+          }}
         >
           <Feather
             name={isTimerRunning ? 'pause' : 'play'}
