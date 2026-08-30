@@ -58,6 +58,76 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(CredenciaisInvalidasException.class)
+    public ResponseEntity<ApiErrorResponse> handleCredenciaisInvalidas(
+            CredenciaisInvalidasException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.UNAUTHORIZED,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(NaoAutenticadoException.class)
+    public ResponseEntity<ApiErrorResponse> handleNaoAutenticado(
+            NaoAutenticadoException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.UNAUTHORIZED,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(EmailJaCadastradoException.class)
+    public ResponseEntity<ApiErrorResponse> handleEmailJaCadastrado(
+            EmailJaCadastradoException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(YouVersionNaoConfiguradoException.class)
+    public ResponseEntity<ApiErrorResponse> handleYouVersionNotConfigured(
+            YouVersionNaoConfiguradoException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(YouVersionIntegrationException.class)
+    public ResponseEntity<ApiErrorResponse> handleYouVersionIntegration(
+            YouVersionIntegrationException exception,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = switch (exception.getStatusCode()) {
+            case 404 -> HttpStatus.NOT_FOUND;
+            case 429 -> HttpStatus.TOO_MANY_REQUESTS;
+            default -> HttpStatus.BAD_GATEWAY;
+        };
+        return buildResponse(
+                status,
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleUnexpected(
             Exception exception,

@@ -30,3 +30,8 @@ management:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:8081,http://localhost:19006,http://localhost:3000}
+  youversion:
+    base-url: ${YVP_BASE_URL:https://api.youversion.com/v1}
+    app-key: ${YVP_APP_KEY:}
+    connect-timeout-ms: ${YVP_CONNECT_TIMEOUT_MS:5000}
+    read-timeout-ms: ${YVP_READ_TIMEOUT_MS:15000}
