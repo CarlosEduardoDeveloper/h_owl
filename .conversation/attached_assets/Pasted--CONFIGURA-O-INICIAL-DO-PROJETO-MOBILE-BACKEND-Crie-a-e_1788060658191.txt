@@ -1,0 +1,1276 @@
+# CONFIGURAÇÃO INICIAL DO PROJETO — MOBILE + BACKEND
+
+Crie a estrutura inicial de um novo projeto composto por:
+
+* aplicativo mobile em React Native;
+* API backend em Spring Boot;
+* banco de dados PostgreSQL.
+
+Nesta etapa, NÃO implemente ainda as funcionalidades de negócio do aplicativo.
+
+O objetivo deste primeiro trabalho é construir exclusivamente uma fundação técnica:
+
+* simples;
+* organizada;
+* reutilizável;
+* escalável;
+* fácil de entender;
+* preparada para crescimento gradual.
+
+O projeto posteriormente receberá as telas e requisitos funcionais.
+
+Não antecipe funcionalidades que ainda não foram solicitadas.
+
+---
+
+# 1. ESTRUTURA GERAL
+
+Organize o workspace preferencialmente desta forma:
+
+```text
+/
+├── mobile/
+├── backend/
+├── docker-compose.yml
+├── .gitignore
+└── README.md
+```
+
+Onde:
+
+`mobile/`
+contém exclusivamente o aplicativo React Native.
+
+`backend/`
+contém exclusivamente a API Spring Boot.
+
+O PostgreSQL deve ser disponibilizado localmente através de Docker Compose.
+
+Não utilizar arquitetura de microsserviços.
+
+Neste momento teremos:
+
+```text
+React Native
+      ↓
+   REST API
+      ↓
+ Spring Boot
+      ↓
+ PostgreSQL
+```
+
+O backend será um monólito modular.
+
+---
+
+# 2. PRINCÍPIOS DE ARQUITETURA
+
+Queremos uma arquitetura baseada em:
+
+**MVC modularizado.**
+
+A solução precisa permanecer simples.
+
+Não utilizar:
+
+* Clean Architecture excessivamente complexa;
+* Hexagonal Architecture completa;
+* CQRS;
+* Event Sourcing;
+* microsserviços;
+* dezenas de abstrações sem necessidade;
+* interfaces criadas apenas por formalidade;
+* padrões complexos sem problema real para resolver.
+
+Queremos um sistema pragmático.
+
+Entretanto, também não queremos:
+
+* controllers gigantes;
+* regras de negócio dentro de controllers;
+* acesso direto ao banco pelo controller;
+* frontend com regras de negócio do backend;
+* arquivos gigantes;
+* componentes React Native monolíticos;
+* código inteiro dividido apenas em pastas técnicas globais.
+
+A estrutura deve permitir crescimento sem precisar reconstruir toda a aplicação posteriormente.
+
+---
+
+# 3. VERSÕES
+
+Utilize somente versões GA/Stable.
+
+Nunca utilize:
+
+* alpha;
+* beta;
+* milestone;
+* release candidate;
+* nightly.
+
+## Mobile
+
+Utilizar a versão estável mais recente disponível de:
+
+* React Native;
+* TypeScript.
+
+Se alguma biblioteca escolhida não for compatível com a versão atual do React Native, utilize a versão estável compatível mais recente.
+
+Não faça downgrade de toda a aplicação apenas por conveniência sem necessidade.
+
+## Backend
+
+Utilizar a versão GA estável mais recente disponível de:
+
+* Java compatível com a versão atual do Spring Boot;
+* Spring Boot.
+
+Não utilizar versões milestone ou release candidate do Spring.
+
+## Banco
+
+Utilizar uma versão estável e suportada do PostgreSQL.
+
+---
+
+# 4. BACKEND — TECNOLOGIAS
+
+Criar a API utilizando:
+
+* Java;
+* Spring Boot;
+* Maven;
+* Spring Web;
+* Spring Data JPA;
+* Bean Validation;
+* PostgreSQL Driver;
+* Flyway;
+* Spring Boot Actuator, apenas para health check básico.
+
+Adicionar outras dependências somente quando forem realmente necessárias.
+
+Evite adicionar bibliotecas antecipadamente.
+
+---
+
+# 5. BACKEND — MVC MODULARIZADO
+
+Não organizar todo o projeto desta maneira:
+
+```text
+controller/
+service/
+repository/
+entity/
+dto/
+```
+
+com todas as funcionalidades misturadas dentro dessas pastas.
+
+Queremos modularização por domínio/feature.
+
+Estrutura conceitual:
+
+```text
+backend/src/main/java/.../
+
+├── config/
+├── shared/
+└── modules/
+    ├── exemplo/
+    │   ├── controller/
+    │   ├── service/
+    │   ├── repository/
+    │   ├── domain/
+    │   ├── dto/
+    │   └── mapper/
+    │
+    └── outroModulo/
+        ├── controller/
+        ├── service/
+        ├── repository/
+        ├── domain/
+        ├── dto/
+        └── mapper/
+```
+
+Não é necessário criar módulos fictícios apenas para preencher essa estrutura.
+
+Inicialmente crie somente o necessário para comprovar a arquitetura.
+
+A ideia é:
+
+```text
+Módulo
+ ├── Controller
+ ├── Service
+ ├── Repository
+ ├── Domain/Entity
+ ├── DTO
+ └── Mapper
+```
+
+---
+
+# 6. RESPONSABILIDADES NO BACKEND
+
+## Controller
+
+Responsável somente por:
+
+* receber requisições;
+* validar inputs;
+* chamar services;
+* definir HTTP status;
+* devolver DTOs.
+
+Não colocar regra de negócio significativa no controller.
+
+---
+
+## Service
+
+Responsável por:
+
+* regras de negócio;
+* orquestração;
+* transações;
+* comunicação com repositories;
+* validações relacionadas ao domínio.
+
+---
+
+## Repository
+
+Responsável por:
+
+* persistência;
+* consultas ao PostgreSQL.
+
+Utilizar Spring Data JPA.
+
+---
+
+## Domain / Entity
+
+Representa entidades do domínio e persistência.
+
+Evite utilizar entidades JPA diretamente como contrato da API.
+
+---
+
+## DTO
+
+Utilizar DTOs para comunicação externa da API.
+
+Separar quando necessário:
+
+```text
+Input
+Response
+```
+
+ou nomenclatura equivalente.
+
+Evite criar DTOs diferentes quando eles forem absolutamente idênticos e não houver benefício prático.
+
+---
+
+## Mapper
+
+Responsável por conversão entre:
+
+```text
+Entity ↔ DTO
+```
+
+Mantenha simples.
+
+Não adicionar bibliotecas de mapping somente por conveniência nesta etapa.
+
+Pode utilizar mapeamento manual inicialmente.
+
+---
+
+# 7. SHARED
+
+A pasta `shared` deve conter SOMENTE elementos realmente compartilhados.
+
+Exemplos futuros:
+
+```text
+shared/
+├── exception/
+├── response/
+├── validation/
+└── util/
+```
+
+Não transforme `shared` em uma pasta onde qualquer classe pode ser colocada.
+
+Classes específicas de um módulo devem permanecer no próprio módulo.
+
+---
+
+# 8. TRATAMENTO GLOBAL DE EXCEÇÕES
+
+Configurar tratamento global usando:
+
+```java
+@RestControllerAdvice
+```
+
+Criar estrutura simples para respostas de erro.
+
+Exemplo conceitual:
+
+```json
+{
+  "timestamp": "2026-08-30T12:00:00Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Dados inválidos",
+  "path": "/api/..."
+}
+```
+
+Para erros de validação, retornar também os campos inválidos quando apropriado.
+
+Não retornar stack trace para o cliente.
+
+---
+
+# 9. VALIDAÇÃO
+
+Utilizar Bean Validation.
+
+Exemplos futuros:
+
+```java
+@NotBlank
+@NotNull
+@Size
+@Email
+```
+
+Validação estrutural deve ocorrer através dos DTOs de entrada.
+
+Regras de negócio devem ser verificadas no Service.
+
+---
+
+# 10. BANCO POSTGRESQL
+
+Configurar PostgreSQL como banco oficial.
+
+Não utilizar H2 como banco principal.
+
+Configurar através de variáveis de ambiente.
+
+Exemplo:
+
+```text
+DB_HOST
+DB_PORT
+DB_NAME
+DB_USERNAME
+DB_PASSWORD
+```
+
+Nunca colocar senhas reais diretamente no código.
+
+---
+
+# 11. FLYWAY
+
+Toda alteração estrutural do banco deverá ser controlada pelo Flyway.
+
+Criar:
+
+```text
+src/main/resources/db/migration/
+```
+
+Utilizar padrão:
+
+```text
+V1__initial_structure.sql
+V2__...
+V3__...
+```
+
+Não utilizar:
+
+```text
+spring.jpa.hibernate.ddl-auto=create
+```
+
+ou:
+
+```text
+update
+```
+
+como mecanismo de criação do banco.
+
+Hibernate deve apenas validar o schema quando apropriado.
+
+Preferencialmente:
+
+```text
+ddl-auto=validate
+```
+
+após existir a migration necessária.
+
+---
+
+# 12. IDs
+
+Prepare a arquitetura para utilizar UUID como identificador público das entidades de negócio.
+
+Quando forem criadas as primeiras entidades reais, avaliaremos caso a caso se haverá:
+
+* UUID;
+* ID numérico interno;
+* código de negócio.
+
+Não crie uma classe genérica de entidade base agora sem necessidade.
+
+---
+
+# 13. DATAS
+
+Padronizar datas adequadamente.
+
+Backend:
+
+utilizar tipos do `java.time`.
+
+Exemplos:
+
+```java
+LocalDate
+LocalDateTime
+Instant
+```
+
+Escolha o tipo adequado dependendo do significado da informação.
+
+Datas de auditoria e eventos globais devem preferencialmente possuir referência temporal inequívoca.
+
+Não armazenar datas como `String`.
+
+---
+
+# 14. CONFIGURAÇÃO POR AMBIENTE
+
+Criar configuração que permita posteriormente trabalhar com:
+
+* desenvolvimento;
+* homologação;
+* produção.
+
+Utilizar:
+
+```text
+application.yml
+```
+
+e profiles quando necessário.
+
+Não duplicar configurações sem necessidade.
+
+Dados sensíveis devem vir de variáveis de ambiente.
+
+---
+
+# 15. HEALTH CHECK
+
+Configurar endpoint básico de health através do Spring Boot Actuator.
+
+Exemplo:
+
+```text
+/actuator/health
+```
+
+Não expor endpoints administrativos desnecessários do Actuator.
+
+---
+
+# 16. CORS
+
+Configurar CORS de forma centralizada.
+
+Durante desenvolvimento, permitir configuração através de variável de ambiente.
+
+Não utilizar indiscriminadamente:
+
+```text
+*
+```
+
+como configuração definitiva de produção.
+
+---
+
+# 17. DOCUMENTAÇÃO DA API
+
+Deixe a estrutura preparada para documentação futura da API.
+
+Caso a biblioteca OpenAPI utilizada seja plenamente compatível com a versão escolhida do Spring Boot, pode configurar Swagger/OpenAPI.
+
+Se houver incompatibilidade com a versão atual do Spring Boot, não faça downgrade do Spring Boot apenas para adicionar Swagger.
+
+Documentação pode ser adicionada posteriormente.
+
+---
+
+# 18. MOBILE — REACT NATIVE
+
+Criar o aplicativo utilizando:
+
+* React Native;
+* TypeScript;
+* Strict TypeScript;
+* componentes funcionais;
+* hooks;
+* navegação moderna e mantida;
+* suporte Android e iOS.
+
+Não desenvolver como aplicação web adaptada.
+
+É um aplicativo mobile.
+
+---
+
+# 19. EXPO
+
+Pode utilizar Expo caso seja compatível com a versão atual do React Native e não imponha limitações relevantes ao projeto.
+
+Entretanto, não crie dependência arquitetural excessiva de recursos exclusivos do Expo.
+
+Sabemos que futuramente podem existir funcionalidades que exijam módulos nativos.
+
+A aplicação deve poder evoluir quando necessário.
+
+---
+
+# 20. MOBILE — ARQUITETURA
+
+Assim como o backend, organizar prioritariamente por feature.
+
+Estrutura conceitual:
+
+```text
+mobile/src/
+
+├── app/
+├── components/
+├── config/
+├── services/
+├── hooks/
+├── storage/
+├── theme/
+├── utils/
+└── features/
+    ├── exemplo/
+    │   ├── components/
+    │   ├── screens/
+    │   ├── hooks/
+    │   ├── services/
+    │   ├── types/
+    │   └── utils/
+    │
+    └── outroModulo/
+```
+
+Não criar todas essas subpastas quando não forem necessárias.
+
+Uma feature simples pode começar pequena e crescer posteriormente.
+
+---
+
+# 21. COMPONENTES COMPARTILHADOS
+
+`src/components` deve possuir somente componentes realmente genéricos.
+
+Exemplos futuros:
+
+```text
+Button
+Input
+Card
+Modal
+Loading
+ErrorState
+EmptyState
+ScreenContainer
+```
+
+Um componente específico de uma funcionalidade deve permanecer dentro da feature.
+
+Exemplo:
+
+```text
+features/trails/components/TrailCard
+```
+
+e não:
+
+```text
+components/TrailCard
+```
+
+---
+
+# 22. TELAS
+
+As telas reais serão fornecidas posteriormente.
+
+Portanto:
+
+NÃO invente agora:
+
+* dashboard;
+* Ninho;
+* Corujal;
+* leitor bíblico;
+* trilhas;
+* telas de login;
+* perfil;
+* gamificação;
+* onboarding.
+
+Nesta etapa crie apenas uma tela mínima que permita verificar que a aplicação iniciou corretamente.
+
+Pode ser algo simples como:
+
+```text
+Aplicativo iniciado com sucesso
+API: Online
+```
+
+Essa tela deverá ser descartável.
+
+Não trate essa tela como parte do design final.
+
+---
+
+# 23. DESIGNS FUTUROS
+
+Posteriormente forneceremos imagens/protótipos das telas.
+
+Essas telas serão a principal referência para:
+
+* layout;
+* espaçamento;
+* navegação;
+* elementos;
+* componentes;
+* comportamento;
+* funcionalidades.
+
+Não crie agora um Design System complexo baseado em suposições.
+
+Prepare apenas uma estrutura básica de tema.
+
+---
+
+# 24. THEME
+
+Criar estrutura centralizada para futuramente armazenar:
+
+```text
+colors
+spacing
+typography
+radius
+shadows
+```
+
+Exemplo:
+
+```text
+theme/
+├── colors.ts
+├── spacing.ts
+├── typography.ts
+├── radius.ts
+└── index.ts
+```
+
+Utilizar valores temporários mínimos.
+
+Quando fornecermos o design, esses valores serão atualizados.
+
+Evitar cores e espaçamentos hardcoded espalhados pelos componentes.
+
+---
+
+# 25. CONSUMO DA API
+
+Criar uma camada centralizada para acesso à API.
+
+Não utilizar `fetch` diretamente dentro de telas.
+
+Estrutura conceitual:
+
+```text
+Screen
+  ↓
+Feature Service
+  ↓
+API Client
+  ↓
+Spring Boot
+```
+
+Criar um cliente HTTP central.
+
+Pode utilizar:
+
+* `fetch` encapsulado;
+  ou
+* Axios.
+
+Escolha uma solução simples e estável.
+
+O cliente deverá centralizar:
+
+* `baseURL`;
+* headers;
+* timeout;
+* tratamento básico de erro.
+
+---
+
+# 26. URL DO BACKEND
+
+Configurar URL da API através de variável de ambiente.
+
+Exemplo:
+
+```text
+API_BASE_URL
+```
+
+Não espalhar URLs pelo código.
+
+Lembre-se de que:
+
+```text
+localhost
+```
+
+do dispositivo/emulador não necessariamente representa a máquina onde o backend está executando.
+
+Deixe a configuração preparada para:
+
+* desenvolvimento no Replit;
+* emulador;
+* dispositivo físico;
+* homologação;
+* produção.
+
+---
+
+# 27. TIPAGEM DAS RESPOSTAS
+
+Toda resposta utilizada no mobile deve possuir tipagem TypeScript.
+
+Evitar:
+
+```typescript
+any
+```
+
+Criar interfaces/types coerentes.
+
+Não reproduzir entidades JPA literalmente no frontend.
+
+Frontend e backend devem se comunicar através dos contratos da API.
+
+---
+
+# 28. ESTADO
+
+Não instalar uma biblioteca complexa de gerenciamento global de estado sem necessidade.
+
+Comece com recursos simples do React.
+
+Quando existir necessidade real de estado global ou server state, poderemos introduzir uma biblioteca apropriada.
+
+Evite arquitetura prematura.
+
+---
+
+# 29. PERSISTÊNCIA LOCAL
+
+Não criar banco SQLite agora sem necessidade.
+
+Prepare uma camada:
+
+```text
+storage/
+```
+
+para posteriormente suportar:
+
+* preferências;
+* tokens;
+* cache;
+* dados offline.
+
+A tecnologia será escolhida quando os requisitos de persistência offline estiverem definidos.
+
+---
+
+# 30. SEGURANÇA
+
+Ainda não implementar autenticação completa.
+
+Mas seguir desde já estas regras:
+
+* nunca armazenar secrets no frontend;
+* nunca colocar senha de banco no repositório;
+* nunca colocar API key privada no React Native;
+* comunicação externa deverá ocorrer através do backend quando envolver segredo;
+* configurações sensíveis via variável de ambiente.
+
+Autenticação será especificada posteriormente.
+
+---
+
+# 31. DOCKER
+
+Criar Dockerfile para o backend.
+
+Criar `docker-compose.yml` no diretório raiz para pelo menos:
+
+```text
+PostgreSQL
+Backend
+```
+
+Se a execução do React Native através do mesmo Compose não fizer sentido, não force essa configuração.
+
+O mobile poderá ser executado separadamente.
+
+---
+
+# 32. DOCKER COMPOSE
+
+O Compose deve permitir subir o ambiente necessário ao backend com comando semelhante a:
+
+```bash
+docker compose up
+```
+
+Configurar:
+
+* PostgreSQL;
+* volume persistente;
+* network;
+* backend;
+* variáveis de ambiente;
+* healthcheck quando útil.
+
+O backend deverá aguardar o banco estar saudável antes de iniciar quando possível.
+
+---
+
+# 33. README
+
+Criar README na raiz explicando de maneira objetiva:
+
+## Pré-requisitos
+
+* Java;
+* Maven/Maven Wrapper;
+* Node;
+* React Native;
+* Docker;
+* Docker Compose.
+
+## Executar PostgreSQL
+
+Comandos necessários.
+
+## Executar backend
+
+Comandos necessários.
+
+## Executar mobile
+
+Comandos necessários.
+
+## Variáveis de ambiente
+
+Documentar todas.
+
+## Estrutura
+
+Explicar:
+
+```text
+mobile/
+backend/
+```
+
+e a arquitetura modular.
+
+Não escrever documentação excessiva.
+
+Ela deve ser prática para outro desenvolvedor conseguir clonar e executar o projeto.
+
+---
+
+# 34. ENVIRONMENT EXAMPLE
+
+Criar arquivos de exemplo quando apropriado:
+
+```text
+.env.example
+```
+
+Nunca commitar `.env` com credenciais reais.
+
+Exemplo conceitual:
+
+```env
+POSTGRES_DB=app
+POSTGRES_USER=app
+POSTGRES_PASSWORD=change_me
+
+DB_HOST=postgres
+DB_PORT=5432
+DB_NAME=app
+DB_USERNAME=app
+DB_PASSWORD=change_me
+```
+
+Para mobile, fornecer configuração equivalente da URL da API seguindo o mecanismo recomendado pela stack escolhida.
+
+---
+
+# 35. GITIGNORE
+
+Criar `.gitignore` adequado para:
+
+* Java;
+* Maven;
+* IntelliJ;
+* VS Code;
+* Node;
+* React Native;
+* Android;
+* iOS;
+* Expo, se utilizado;
+* variáveis de ambiente;
+* arquivos temporários;
+* builds.
+
+Não ignorar arquivos necessários para reproduzir o projeto.
+
+---
+
+# 36. PADRONIZAÇÃO
+
+Frontend e backend devem possuir formatação consistente.
+
+Mobile:
+
+* ESLint;
+* Prettier, se compatível com a configuração escolhida;
+* TypeScript strict.
+
+Backend:
+
+seguir convenções Java/Spring.
+
+Não adicionar ferramentas pesadas de análise estática neste primeiro momento.
+
+---
+
+# 37. TESTES
+
+Criar infraestrutura mínima de testes.
+
+Backend:
+
+* JUnit;
+* Spring Boot Test.
+
+Criar pelo menos um teste simples de contexto/health da aplicação.
+
+Mobile:
+
+manter estrutura preparada para testes.
+
+Não criar uma suíte extensa neste primeiro passo.
+
+---
+
+# 38. ENDPOINT DE TESTE DE INTEGRAÇÃO
+
+Para comprovar comunicação frontend/backend, criar um endpoint extremamente simples.
+
+Por exemplo:
+
+```http
+GET /api/v1/system/status
+```
+
+Response:
+
+```json
+{
+  "status": "UP"
+}
+```
+
+Esse endpoint não representa uma funcionalidade de negócio.
+
+Ele serve apenas para verificar integração.
+
+A tela temporária do React Native deve consumir esse endpoint e apresentar:
+
+```text
+API Online
+```
+
+ou:
+
+```text
+API Offline
+```
+
+Não colocar lógica sofisticada nesse endpoint.
+
+---
+
+# 39. VERSIONAMENTO DA API
+
+Utilizar inicialmente prefixo:
+
+```text
+/api/v1
+```
+
+Exemplo:
+
+```text
+/api/v1/system/status
+```
+
+Isso permitirá evolução futura dos contratos.
+
+---
+
+# 40. NÃO IMPLEMENTAR AGORA
+
+Não implementar nesta etapa:
+
+* autenticação;
+* autorização;
+* usuários;
+* JWT;
+* login social;
+* IA;
+* LLM;
+* RAG;
+* Bíblia;
+* trilhas;
+* sessões;
+* ovos;
+* corujas;
+* gamificação;
+* quizzes;
+* notificações;
+* WebSockets;
+* Redis;
+* filas;
+* Kafka;
+* cache distribuído;
+* uploads;
+* armazenamento em nuvem;
+* funcionalidades sociais;
+* analytics;
+* observabilidade avançada.
+
+Esses requisitos serão adicionados progressivamente.
+
+Não criar tabelas vazias ou classes placeholder para essas funcionalidades.
+
+---
+
+# 41. BANCO INICIAL
+
+Não criar dezenas de tabelas antecipadamente.
+
+A migration inicial pode possuir somente o necessário para validar que:
+
+* Flyway está funcionando;
+* PostgreSQL está conectado;
+* aplicação inicializa corretamente.
+
+Se nenhuma tabela funcional for necessária neste momento, não inventar entidades de negócio.
+
+Uma estratégia válida é criar somente configuração Flyway e posteriormente iniciar as migrations reais quando o primeiro módulo for definido.
+
+---
+
+# 42. ESCALABILIDADE
+
+"Escalável" neste projeto NÃO significa criar complexidade antecipadamente.
+
+Escalabilidade significa:
+
+* módulos independentes;
+* baixo acoplamento;
+* responsabilidades claras;
+* contratos claros;
+* configuração externa;
+* componentes reutilizáveis;
+* migrations versionadas;
+* facilidade para adicionar funcionalidades;
+* facilidade para testar;
+* possibilidade de alterar implementações sem reconstruir o sistema inteiro.
+
+Prefira sempre a implementação mais simples que respeite esses princípios.
+
+---
+
+# 43. REGRA PARA ABSTRAÇÕES
+
+Antes de criar:
+
+* interface;
+* abstract class;
+* factory;
+* adapter;
+* facade;
+* provider;
+* manager;
+* handler genérico;
+
+pergunte se existe um problema real que essa abstração resolve.
+
+Se não houver, não crie.
+
+Exemplo:
+
+Não precisamos de:
+
+```text
+IUserService
+UserServiceImpl
+```
+
+apenas porque algumas arquiteturas Java utilizam esse padrão.
+
+Se houver apenas uma implementação e nenhuma necessidade de contrato intercambiável:
+
+```text
+UserService
+```
+
+é suficiente.
+
+Por outro lado, integrações externas que provavelmente terão implementações diferentes podem justificar interfaces futuramente.
+
+---
+
+# 44. RESULTADO ESPERADO
+
+Ao terminar esta etapa, eu preciso conseguir:
+
+### Backend
+
+Subir:
+
+```text
+PostgreSQL
++
+Spring Boot
+```
+
+e acessar:
+
+```http
+GET /api/v1/system/status
+```
+
+recebendo:
+
+```json
+{
+  "status": "UP"
+}
+```
+
+### Mobile
+
+Executar o aplicativo React Native em ambiente de desenvolvimento.
+
+A tela inicial temporária deve:
+
+* carregar;
+* consultar a API;
+* informar se a API está disponível.
+
+### Banco
+
+Spring Boot deve:
+
+* conectar no PostgreSQL;
+* executar Flyway;
+* iniciar sem depender de criação automática de schema pelo Hibernate.
+
+---
+
+# 45. VALIDAÇÃO OBRIGATÓRIA
+
+Antes de considerar essa etapa concluída:
+
+1. instale as dependências;
+2. compile o backend;
+3. execute os testes;
+4. valide as migrations;
+5. suba PostgreSQL;
+6. suba Spring Boot;
+7. teste `/api/v1/system/status`;
+8. compile/verifique o TypeScript do mobile;
+9. execute o mobile;
+10. valide a comunicação mobile → backend;
+11. corrija todos os erros encontrados.
+
+Não considere a tarefa concluída apenas porque os arquivos foram gerados.
+
+---
+
+# 46. ENTREGA
+
+Ao finalizar:
+
+Mostre resumidamente:
+
+1. estrutura criada;
+2. versões utilizadas;
+3. principais dependências;
+4. como iniciar PostgreSQL;
+5. como iniciar backend;
+6. como iniciar mobile;
+7. URL/porta do backend;
+8. variáveis de ambiente;
+9. qualquer limitação do ambiente Replit encontrada.
+
+Não comece a desenvolver as funcionalidades do produto.
+
+Depois dessa fundação estar funcionando, forneceremos as primeiras telas e requisitos do primeiro módulo.
