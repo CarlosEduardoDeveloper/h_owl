@@ -14,45 +14,57 @@
 
 const colors = {
   light: {
-    // Legacy aliases (kept for backward compatibility)
-    text: '#152238',
-    tint: '#ef7657',
+    // Legacy aliases
+    text: '#1E1B38',
+    tint: '#ED5B0A',
 
     // Core surfaces
-    background: '#f7f4ee',
-    foreground: '#152238',
+    background: '#FFF6E5',
+    foreground: '#1E1B38',
 
     // Cards / elevated surfaces
-    card: '#fffdf8',
-    cardForeground: '#152238',
+    card: '#FFFFFF',
+    cardForeground: '#1E1B38',
 
     // Primary action color (buttons, links, active states)
-    primary: '#ef7657',
-    primaryForeground: '#ffffff',
+    primary: '#ED5B0A',
+    primaryDark: '#C84800',
+    primaryForeground: '#FFFFFF',
 
     // Secondary / less-emphasis interactive surfaces
-    secondary: '#e9e2d5',
-    secondaryForeground: '#152238',
+    secondary: '#FFF6E5',
+    secondaryForeground: '#ED5B0A',
 
-    // Muted / subdued elements (dividers, timestamps, placeholders)
-    muted: '#ece6dc',
-    mutedForeground: '#687286',
+    // Muted / subdued elements
+    muted: '#F4ECE0',
+    mutedForeground: '#8C7C6D',
 
-    // Accent highlights (badges, selected items, focus rings)
-    accent: '#dce9e4',
-    accentForeground: '#19483f',
+    // Accent highlights
+    accent: '#D7F9EB',
+    accentForeground: '#046865',
 
-    // Destructive actions (delete, error states)
-    destructive: '#c94f4f',
-    destructiveForeground: '#ffffff',
+    // Avatar Teal
+    avatarTeal: '#046865',
+
+    // Destructive actions
+    destructive: '#D93838',
+    destructiveForeground: '#FFFFFF',
 
     // Borders and input outlines
-    border: '#ddd5c9',
-    input: '#cfc5b7',
+    border: '#ED5B0A',
+    input: '#E8DFC9',
+    inputBackground: '#FFFFFF',
+
+    // Stat Cards
+    statOfensivaBg: '#FDE3D2',
+    statXpBg: '#D7F9EB',
+    statRanquingBg: '#EBE4FF',
+
+    // Progress Colors
+    orangeProgress: '#ED5B0A',
+    purpleProgress: '#7C3AED',
   },
 
-  // Border radius (in px). Sync from the sibling web artifact's --radius
-  // CSS variable. This value applies to cards, buttons, inputs, and modals.
   radius: 16,
 };
 
