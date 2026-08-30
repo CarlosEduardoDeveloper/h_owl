@@ -125,8 +125,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           displayName,
         });
       } catch (error) {
-        if (error instanceof ApiClientError && error.status === 409) {
-          throw new Error('Usuário já cadastrado');
+        if (error instanceof ApiClientError) {
+          if (error.status === 409) {
+            throw new Error('Usuário já cadastrado');
+          }
+          if (error.status === 400) {
+            throw new Error(error.message || 'Dados inválidos');
+          }
         }
         throw error instanceof Error ? error : new Error('Falha ao registrar');
       }

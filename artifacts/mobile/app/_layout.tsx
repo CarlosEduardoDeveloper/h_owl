@@ -17,6 +17,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { AuthGate } from '@/components/AuthGate';
 import { AuthProvider } from '@/context/AuthContext';
 import { BibleReadingProvider } from '@/context/BibleReadingContext';
+import { getApiHostUrl } from '@/config/env';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -48,6 +49,12 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
+
+  useEffect(() => {
+    if (__DEV__) {
+      console.log('[API] EXPO_PUBLIC_API_BASE_URL =', getApiHostUrl());
+    }
+  }, []);
 
   if (!fontsLoaded && !fontError) return null;
 
