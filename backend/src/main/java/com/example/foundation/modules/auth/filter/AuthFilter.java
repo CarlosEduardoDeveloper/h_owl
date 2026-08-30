@@ -26,7 +26,8 @@ public class AuthFilter extends OncePerRequestFilter {
             "/actuator",
             "/api/v1/system",
             "/api/v1/auth/login",
-            "/api/v1/auth/registrar"
+            "/api/v1/auth/registrar",
+            "/callback"
     );
 
     private final AuthService authService;

@@ -11,6 +11,7 @@ Base técnica de um aplicativo React Native conectado a uma API Spring Boot e Po
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - Required backend env: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`
+- YouVersion (Replit Secrets): `YVP_APP_KEY`, `YVP_CALLBACK_URL=https://fundacao-mobile-backend.replit.app/callback`
 - Required mobile env: `EXPO_PUBLIC_API_BASE_URL`
 
 ## Stack

@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record YouVersionProperties(
         String baseUrl,
         String appKey,
+        String callbackUrl,
         int connectTimeoutMs,
         int readTimeoutMs
 ) {

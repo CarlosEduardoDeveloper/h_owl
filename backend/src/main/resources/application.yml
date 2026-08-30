@@ -33,5 +33,6 @@ app:
   youversion:
     base-url: ${YVP_BASE_URL:https://api.youversion.com/v1}
     app-key: ${YVP_APP_KEY:}
+    callback-url: ${YVP_CALLBACK_URL:}
     connect-timeout-ms: ${YVP_CONNECT_TIMEOUT_MS:5000}
     read-timeout-ms: ${YVP_READ_TIMEOUT_MS:15000}
