@@ -14,13 +14,13 @@ paths = ["/api", "/actuator", "/callback"]
 run = "bash -lc 'export JAVA_HOME=$(dirname $(dirname $(readlink -f $(command -v javac)))) && cd backend && mvn spring-boot:run'"
 
 [services.production.build]
-args = ["mvn", "-B", "-f", "backend/pom.xml", "clean", "package", "-DskipTests"]
+args = ["bash", "-lc", "cd backend && mvn -B clean package -DskipTests"]
 
 [services.production.build.env]
 NODE_ENV = "production"
 
 [services.production.run]
-args = ["java", "-jar", "backend/target/foundation-backend-0.0.1-SNAPSHOT.jar"]
+args = ["bash", "-lc", "cd backend && exec java -jar target/foundation-backend-0.0.1-SNAPSHOT.jar"]
 
 [services.production.run.env]
 PORT = "8080"
