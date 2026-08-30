@@ -1,0 +1,1730 @@
+# IMPLEMENTAÇÃO DAS ENTIDADES DO DOMÍNIO — VERSÃO REVISADA
+
+Implemente no backend Spring Boot existente as entidades principais do domínio da aplicação.
+
+O projeto já possui:
+
+* Java;
+* Spring Boot;
+* Spring Data JPA;
+* PostgreSQL;
+* Flyway;
+* Bean Validation;
+* arquitetura MVC modularizada.
+
+Mantenha a arquitetura existente.
+
+Não recrie o projeto.
+
+Não altere configurações existentes sem necessidade.
+
+O objetivo desta etapa é implementar:
+
+* entidades;
+* relacionamentos;
+* enums;
+* repositories;
+* migrations Flyway;
+* DTOs;
+* mappers;
+* services básicos;
+* exclusão lógica.
+
+---
+
+# 1. REGRAS GLOBAIS DE TODAS AS ENTIDADES
+
+Estas regras são obrigatórias para TODAS as entidades.
+
+## 1.1 Identificador
+
+Todas as entidades devem possuir:
+
+```text
+id: UUID
+```
+
+O `id` é obrigatório.
+
+No PostgreSQL utilizar tipo:
+
+```text
+uuid
+```
+
+---
+
+# 1.2 DATA DE CRIAÇÃO
+
+Todas as entidades devem possuir:
+
+```text
+criadoEm: Instant
+```
+
+Este campo é obrigatório.
+
+Deve ser preenchido automaticamente na criação.
+
+No banco:
+
+```text
+criado_em NOT NULL
+```
+
+---
+
+# 1.3 DATA DE ATUALIZAÇÃO
+
+Todas as entidades devem possuir:
+
+```text
+atualizadoEm: Instant
+```
+
+Esse campo NÃO é obrigatório.
+
+Pode ser preenchido automaticamente quando ocorrer atualização.
+
+---
+
+# 1.4 DELETE LÓGICO
+
+Nenhuma entidade deverá ser removida fisicamente pelas operações normais da aplicação.
+
+TODAS as entidades devem possuir:
+
+```text
+ativo: Boolean
+excluidoEm: Instant
+```
+
+A exclusão lógica deverá funcionar alterando:
+
+```text
+ativo = false
+excluidoEm = instante atual
+```
+
+Não executar:
+
+```sql
+DELETE FROM ...
+```
+
+para exclusões realizadas através das regras normais da aplicação.
+
+O registro deve permanecer no PostgreSQL para:
+
+* histórico;
+* auditoria;
+* rastreabilidade;
+* integridade de relacionamentos.
+
+Ao criar uma entidade, a aplicação pode inicializar:
+
+```text
+ativo = true
+```
+
+Porém, seguindo a regra geral do domínio, a coluna NÃO deve possuir `NOT NULL`.
+
+---
+
+# 1.5 CAMPOS OBRIGATÓRIOS
+
+Regra extremamente importante:
+
+Somente são obrigatórios:
+
+```text
+id
+criado_em
+```
+
+Todos os demais atributos devem aceitar `NULL`.
+
+Isso inclui:
+
+* Strings;
+* enums;
+* datas;
+* números;
+* booleans;
+* Foreign Keys;
+* descrições;
+* relacionamentos.
+
+Portanto NÃO criar `NOT NULL` em nenhum outro campo.
+
+Não adicionar validações como:
+
+```java
+@NotNull
+@NotBlank
+```
+
+nos DTOs apenas porque determinado campo parece conceitualmente importante.
+
+As regras de obrigatoriedade serão definidas posteriormente de acordo com cada fluxo funcional.
+
+---
+
+# 1.6 RELACIONAMENTOS
+
+Mesmo quando existir relacionamento entre entidades, as Foreign Keys devem ser inicialmente opcionais.
+
+Exemplo:
+
+```text
+usuario_id UUID NULL
+coruja_id UUID NULL
+sessao_estudo_id UUID NULL
+```
+
+Criar Foreign Key quando houver relacionamento estrutural, porém permitindo `NULL`.
+
+---
+
+# 2. PESSOA
+
+Representa os dados pessoais de uma pessoa.
+
+## Entidade
+
+`Pessoa`
+
+## Atributos
+
+```text
+id: UUID
+nome: String
+dataNascimento: LocalDate
+genero: String
+fotoUrl: String
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+Todos opcionais, exceto:
+
+```text
+id
+criadoEm
+```
+
+---
+
+# 3. USUÁRIO
+
+Representa a conta do usuário dentro da aplicação.
+
+## Entidade
+
+`Usuario`
+
+## Atributos
+
+```text
+id: UUID
+pessoaId: UUID
+
+email: String
+senhaHash: String
+status: UsuarioStatus
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+## Enum
+
+`UsuarioStatus`
+
+```text
+ATIVO
+INATIVO
+BLOQUEADO
+```
+
+## Relacionamento
+
+```text
+Usuario N --- 0..1 Pessoa
+```
+
+Não tornar `pessoa_id` obrigatório.
+
+---
+
+# 4. PREFERÊNCIA DO USUÁRIO
+
+Representa configurações e preferências do usuário.
+
+## Entidade
+
+`PreferenciaUsuario`
+
+## Atributos
+
+```text
+id: UUID
+usuarioId: UUID
+
+tema: TemaAplicacao
+modoFocoPadrao: ModoFoco
+notificacoesAtivas: Boolean
+duracaoFocoPadrao: Integer
+versaoBibliaPreferida: String
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+## Enum TemaAplicacao
+
+```text
+CLARO
+ESCURO
+SISTEMA
+```
+
+## Enum ModoFoco
+
+```text
+ESTRITO
+FLEXIVEL
+```
+
+---
+
+# 5. SESSÃO DE ESTUDO
+
+Representa uma sessão de estudo realizada pelo usuário.
+
+É uma das entidades centrais da aplicação.
+
+## Entidade
+
+`SessaoEstudo`
+
+## Atributos
+
+```text
+id: UUID
+usuarioId: UUID
+
+intencao: IntencaoEstudo
+modoFoco: ModoFoco
+
+duracaoPlanejadaMinutos: Integer
+duracaoRealMinutos: Integer
+
+inicioEm: Instant
+fimEm: Instant
+
+status: SessaoEstudoStatus
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+## IntencaoEstudo
+
+```text
+LEITURA_LIVRE
+TRILHA
+REVISAO
+```
+
+## SessaoEstudoStatus
+
+```text
+CRIADA
+EM_ANDAMENTO
+CONCLUIDA
+INTERROMPIDA
+CANCELADA
+```
+
+---
+
+# 6. CONTEÚDO DA SESSÃO
+
+Representa conteúdos relacionados a determinada sessão de estudo.
+
+## Entidade
+
+`ConteudoSessao`
+
+## Atributos
+
+```text
+id: UUID
+sessaoEstudoId: UUID
+
+tipo: TipoConteudoSessao
+referenciaId: UUID
+
+titulo: String
+descricao: String
+ordem: Integer
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+## TipoConteudoSessao
+
+```text
+BIBLIA
+ARTIGO
+TRILHA_MODULO
+REVISAO
+```
+
+---
+
+# 7. TRILHA
+
+Representa uma trilha estruturada de aprendizado.
+
+## Entidade
+
+`Trilha`
+
+## Atributos
+
+```text
+id: UUID
+
+titulo: String
+descricao: String
+imagemUrl: String
+
+nivelDificuldade: NivelDificuldade
+ordem: Integer
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+## NivelDificuldade
+
+```text
+INICIANTE
+INTERMEDIARIO
+AVANCADO
+```
+
+---
+
+# 8. MÓDULO
+
+Representa uma etapa de uma trilha.
+
+## Entidade
+
+`Modulo`
+
+## Atributos
+
+```text
+id: UUID
+trilhaId: UUID
+
+titulo: String
+descricao: String
+ordem: Integer
+tempoSugeridoMinutos: Integer
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+---
+
+# 9. CONTEÚDO
+
+Representa um conteúdo pertencente a um módulo.
+
+## Entidade
+
+`Conteudo`
+
+## Atributos
+
+```text
+id: UUID
+moduloId: UUID
+
+tipo: TipoConteudo
+
+titulo: String
+conteudo: Text
+url: String
+ordem: Integer
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+## TipoConteudo
+
+```text
+TEXTO
+BIBLIA
+VIDEO
+IMAGEM
+PDF
+```
+
+Não armazenar arquivos binários diretamente no PostgreSQL.
+
+---
+
+# 10. PROGRESSO DA TRILHA
+
+Representa o progresso de um usuário em determinada trilha.
+
+## Entidade
+
+`ProgressoTrilha`
+
+## Atributos
+
+```text
+id: UUID
+
+usuarioId: UUID
+trilhaId: UUID
+moduloAtualId: UUID
+
+status: ProgressoTrilhaStatus
+
+progressoPercentual: Integer
+ultimoAcessoEm: Instant
+concluidoEm: Instant
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+## ProgressoTrilhaStatus
+
+```text
+NAO_INICIADO
+EM_ANDAMENTO
+CONCLUIDO
+```
+
+---
+
+# 11. QUIZ
+
+Representa um conjunto de questões de avaliação.
+
+## Entidade
+
+`Quiz`
+
+## Atributos
+
+```text
+id: UUID
+moduloId: UUID
+
+titulo: String
+descricao: String
+ordem: Integer
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+---
+
+# 12. QUESTÃO
+
+Representa uma pergunta pertencente a um quiz.
+
+## Entidade
+
+`Questao`
+
+## Atributos
+
+```text
+id: UUID
+quizId: UUID
+
+enunciado: String
+ordem: Integer
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+---
+
+# 13. ALTERNATIVA
+
+Representa uma alternativa pertencente a uma questão.
+
+## Entidade
+
+`Alternativa`
+
+## Atributos
+
+```text
+id: UUID
+questaoId: UUID
+
+texto: String
+correta: Boolean
+ordem: Integer
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+---
+
+# 14. TENTATIVA DE QUIZ
+
+Representa uma tentativa realizada pelo usuário.
+
+## Entidade
+
+`TentativaQuiz`
+
+## Atributos
+
+```text
+id: UUID
+
+usuarioId: UUID
+quizId: UUID
+sessaoEstudoId: UUID
+
+pontuacao: Integer
+acertos: Integer
+totalQuestoes: Integer
+realizadoEm: Instant
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+---
+
+# 15. RESPOSTA DA QUESTÃO
+
+Representa uma resposta dada em determinada tentativa de quiz.
+
+## Entidade
+
+`RespostaQuestao`
+
+## Atributos
+
+```text
+id: UUID
+
+tentativaQuizId: UUID
+questaoId: UUID
+alternativaId: UUID
+
+correta: Boolean
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+O atributo `correta` deverá futuramente ser calculado pelo backend.
+
+---
+
+# 16. TIPO DE OVO
+
+Representa o catálogo de ovos existentes na aplicação.
+
+## Entidade
+
+`TipoOvo`
+
+## Atributos
+
+```text
+id: UUID
+
+nome: String
+raridade: Raridade
+
+duracaoMinimaMinutos: Integer
+duracaoMaximaMinutos: Integer
+
+imagemUrl: String
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+## Raridade
+
+```text
+COMUM
+INCOMUM
+RARA
+EPICA
+LENDARIA
+```
+
+---
+
+# 17. OVO DO USUÁRIO
+
+Representa uma instância de ovo atribuída a determinado usuário.
+
+## Entidade
+
+`OvoUsuario`
+
+## Atributos
+
+```text
+id: UUID
+
+usuarioId: UUID
+tipoOvoId: UUID
+sessaoEstudoId: UUID
+
+status: OvoStatus
+chocadoEm: Instant
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+## OvoStatus
+
+```text
+INCUBANDO
+CHOCADO
+QUEBRADO
+CANCELADO
+```
+
+---
+
+# 18. CORUJA
+
+Representa o catálogo de corujas existentes no sistema.
+
+Esta entidade define o tipo/espécie da coruja.
+
+## Entidade
+
+`Coruja`
+
+## Atributos
+
+```text
+id: UUID
+
+nome: String
+especie: String
+raridade: Raridade
+
+descricao: String
+imagemUrl: String
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+Exemplos futuros:
+
+```text
+Coruja Peregrina
+Coruja Erudita
+Coruja Sentinela
+Coruja Historiadora
+Coruja Reformadora
+```
+
+---
+
+# 19. CORUJA DO USUÁRIO
+
+Representa uma instância de coruja pertencente ao usuário.
+
+## Entidade
+
+`CorujaUsuario`
+
+## Atributos
+
+```text
+id: UUID
+
+usuarioId: UUID
+corujaId: UUID
+sessaoEstudoId: UUID
+
+adquiridaEm: Instant
+
+nivel: Integer
+experiencia: Integer
+observacoes: String
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+Não tornar nenhum desses campos obrigatório, exceto:
+
+```text
+id
+criadoEm
+```
+
+---
+
+# 20. RECOMPENSA
+
+Criar uma nova entidade chamada:
+
+`Recompensa`
+
+Essa entidade representa o evento de recompensa concedido ao usuário.
+
+Ela deve vincular principalmente:
+
+```text
+Usuario
+Coruja
+```
+
+A intenção é manter um histórico explícito de recompensas obtidas.
+
+Não utilizar `CorujaUsuario` como único registro da recompensa.
+
+A entidade `Recompensa` representa o evento.
+
+A entidade `CorujaUsuario` representa a posse da coruja.
+
+## Entidade
+
+`Recompensa`
+
+## Atributos
+
+```text
+id: UUID
+
+usuarioId: UUID
+corujaId: UUID
+
+sessaoEstudoId: UUID
+ovoUsuarioId: UUID
+
+tipo: TipoRecompensa
+
+titulo: String
+descricao: String
+
+concedidaEm: Instant
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+## TipoRecompensa
+
+Criar enum:
+
+```text
+CORUJA
+CONQUISTA
+PROGRESSO
+BONUS
+OUTRA
+```
+
+Inicialmente o tipo mais utilizado será:
+
+```text
+CORUJA
+```
+
+## Relacionamentos
+
+```text
+Recompensa N --- 0..1 Usuario
+
+Recompensa N --- 0..1 Coruja
+
+Recompensa N --- 0..1 SessaoEstudo
+
+Recompensa N --- 0..1 OvoUsuario
+```
+
+Todos os relacionamentos devem aceitar `NULL`.
+
+---
+
+# 21. FLUXO CONCEITUAL DA RECOMPENSA
+
+A arquitetura deve permitir futuramente o seguinte fluxo:
+
+```text
+Usuário conclui sessão
+        ↓
+SessaoEstudo
+        ↓
+OvoUsuario é validado
+        ↓
+Coruja é selecionada
+        ↓
+Recompensa é registrada
+        ↓
+CorujaUsuario é criada
+        ↓
+Coruja passa a aparecer no Viveiro
+```
+
+Ou seja:
+
+```text
+RECOMPENSA
+```
+
+é o registro de que algo foi concedido.
+
+Enquanto:
+
+```text
+CORUJA_USUARIO
+```
+
+representa a posse atual da coruja.
+
+Não misturar os dois conceitos.
+
+---
+
+# 22. VIVEIRO
+
+Representa o ambiente de corujas do usuário.
+
+## Entidade
+
+`Viveiro`
+
+## Atributos
+
+```text
+id: UUID
+
+usuarioId: UUID
+
+nome: String
+nivel: Integer
+xpTotal: Long
+temaVisual: String
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+---
+
+# 23. DECORAÇÃO DO VIVEIRO
+
+Representa itens visuais pertencentes ao Viveiro.
+
+## Entidade
+
+`DecoracaoViveiro`
+
+## Atributos
+
+```text
+id: UUID
+
+viveiroId: UUID
+
+nome: String
+tipo: TipoDecoracao
+imagemUrl: String
+adquiridaEm: Instant
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+## TipoDecoracao
+
+```text
+POLEIRO
+PLANTA
+CENARIO
+OBJETO
+OUTRO
+```
+
+---
+
+# 24. NOTA
+
+Representa anotações realizadas ou salvas pelo usuário.
+
+## Entidade
+
+`Nota`
+
+## Atributos
+
+```text
+id: UUID
+
+usuarioId: UUID
+sessaoEstudoId: UUID
+
+titulo: String
+conteudo: Text
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+---
+
+# 25. DESTAQUE
+
+Representa um conteúdo destacado pelo usuário.
+
+## Entidade
+
+`Destaque`
+
+## Atributos
+
+```text
+id: UUID
+
+usuarioId: UUID
+sessaoEstudoId: UUID
+
+tipo: TipoDestaque
+referenciaId: UUID
+
+texto: Text
+cor: String
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+## TipoDestaque
+
+```text
+BIBLIA
+ARTIGO
+TRILHA_MODULO
+```
+
+---
+
+# 26. CONSULTA AO SÁBIO
+
+Representa uma pergunta realizada ao assistente contextual da aplicação.
+
+## Entidade
+
+`ConsultaSabio`
+
+## Atributos
+
+```text
+id: UUID
+
+usuarioId: UUID
+sessaoEstudoId: UUID
+
+pergunta: Text
+resposta: Text
+contextoReferencia: String
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+---
+
+# 27. ITEM DE REVISÃO
+
+Representa conteúdo disponível para futuras sessões de revisão.
+
+## Entidade
+
+`ItemRevisao`
+
+## Atributos
+
+```text
+id: UUID
+
+usuarioId: UUID
+
+tipo: TipoItemRevisao
+referenciaId: UUID
+
+proximaRevisaoEm: Instant
+intervaloDias: Integer
+facilidade: Integer
+repeticoes: Integer
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+## TipoItemRevisao
+
+```text
+VERSICULO
+NOTA
+CONCEITO
+QUIZ_ERRO
+DESTAQUE
+CONSULTA_SABIO
+```
+
+---
+
+# 28. CONQUISTA
+
+Representa uma conquista disponível no sistema.
+
+## Entidade
+
+`Conquista`
+
+## Atributos
+
+```text
+id: UUID
+
+nome: String
+descricao: String
+iconeUrl: String
+
+categoria: String
+regra: String
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+---
+
+# 29. CONQUISTA DO USUÁRIO
+
+Representa uma conquista atribuída ao usuário.
+
+## Entidade
+
+`ConquistaUsuario`
+
+## Atributos
+
+```text
+id: UUID
+
+usuarioId: UUID
+conquistaId: UUID
+
+conquistadaEm: Instant
+progresso: Integer
+
+ativo: Boolean
+criadoEm: Instant
+atualizadoEm: Instant
+excluidoEm: Instant
+```
+
+---
+
+# 30. PADRÃO DE SOFT DELETE NO BACKEND
+
+Criar uma solução padronizada e simples para exclusão lógica.
+
+Exemplo conceitual:
+
+```java
+public void excluir(UUID id) {
+    Entidade entidade = repository.findById(id)
+        .orElseThrow(...);
+
+    entidade.setAtivo(false);
+    entidade.setExcluidoEm(Instant.now());
+
+    repository.save(entidade);
+}
+```
+
+Não utilizar:
+
+```java
+repository.delete(...)
+repository.deleteById(...)
+```
+
+nas operações normais da aplicação.
+
+---
+
+# 31. CONSULTAS
+
+Por padrão, listagens da aplicação devem considerar apenas registros ativos.
+
+Exemplo conceitual:
+
+```text
+ativo = true
+```
+
+Entretanto, não criar filtros globais extremamente complexos que dificultem consultas administrativas futuras.
+
+O sistema deverá futuramente poder consultar registros inativos quando necessário.
+
+---
+
+# 32. ENTIDADE BASE
+
+Como TODAS as entidades possuem os mesmos campos:
+
+```text
+id
+ativo
+criadoEm
+atualizadoEm
+excluidoEm
+```
+
+é permitido criar uma entidade base simples.
+
+Exemplo conceitual:
+
+```java
+@MappedSuperclass
+public abstract class BaseEntity {
+
+    private UUID id;
+
+    private Boolean ativo;
+
+    private Instant criadoEm;
+
+    private Instant atualizadoEm;
+
+    private Instant excluidoEm;
+}
+```
+
+Utilize essa abordagem apenas para evitar repetição.
+
+Não criar hierarquias adicionais ou abstrações complexas.
+
+Apenas UMA classe base simples é suficiente.
+
+---
+
+# 33. REGRAS DA BASE ENTITY
+
+Mesmo utilizando `BaseEntity`:
+
+```text
+id
+criadoEm
+```
+
+devem ser obrigatórios.
+
+Enquanto:
+
+```text
+ativo
+atualizadoEm
+excluidoEm
+```
+
+devem permanecer opcionais no banco.
+
+A aplicação pode definir:
+
+```text
+ativo = true
+```
+
+automaticamente ao criar um registro.
+
+---
+
+# 34. CONSTRAINTS
+
+NÃO criar constraints `NOT NULL`, exceto:
+
+```text
+id
+criado_em
+```
+
+Foreign Keys podem existir, porém devem aceitar NULL.
+
+Também tenha cuidado com UNIQUE constraints.
+
+Não crie uma constraint que impeça historização ou soft delete sem considerar registros inativos.
+
+Por exemplo, para email de usuário, se futuramente for necessário UNIQUE, avaliar índice parcial:
+
+```sql
+WHERE ativo = true
+```
+
+em vez de impedir reutilização causada por registros excluídos logicamente.
+
+---
+
+# 35. FOREIGN KEYS
+
+Criar Foreign Keys estruturais para:
+
+```text
+usuario.pessoa_id
+
+preferencia_usuario.usuario_id
+
+sessao_estudo.usuario_id
+
+conteudo_sessao.sessao_estudo_id
+
+modulo.trilha_id
+
+conteudo.modulo_id
+
+progresso_trilha.usuario_id
+progresso_trilha.trilha_id
+progresso_trilha.modulo_atual_id
+
+quiz.modulo_id
+
+questao.quiz_id
+
+alternativa.questao_id
+
+tentativa_quiz.usuario_id
+tentativa_quiz.quiz_id
+tentativa_quiz.sessao_estudo_id
+
+resposta_questao.tentativa_quiz_id
+resposta_questao.questao_id
+resposta_questao.alternativa_id
+
+ovo_usuario.usuario_id
+ovo_usuario.tipo_ovo_id
+ovo_usuario.sessao_estudo_id
+
+coruja_usuario.usuario_id
+coruja_usuario.coruja_id
+coruja_usuario.sessao_estudo_id
+
+recompensa.usuario_id
+recompensa.coruja_id
+recompensa.sessao_estudo_id
+recompensa.ovo_usuario_id
+
+viveiro.usuario_id
+
+decoracao_viveiro.viveiro_id
+
+nota.usuario_id
+nota.sessao_estudo_id
+
+destaque.usuario_id
+destaque.sessao_estudo_id
+
+consulta_sabio.usuario_id
+consulta_sabio.sessao_estudo_id
+
+item_revisao.usuario_id
+
+conquista_usuario.usuario_id
+conquista_usuario.conquista_id
+```
+
+TODAS essas Foreign Keys devem aceitar NULL.
+
+---
+
+# 36. ÍNDICES
+
+Criar índices principais para campos utilizados frequentemente em consultas.
+
+Priorizar:
+
+```text
+usuario.email
+
+sessao_estudo.usuario_id
+sessao_estudo.status
+
+modulo.trilha_id
+
+conteudo.modulo_id
+
+progresso_trilha.usuario_id
+progresso_trilha.trilha_id
+
+tentativa_quiz.usuario_id
+
+ovo_usuario.usuario_id
+
+coruja_usuario.usuario_id
+
+recompensa.usuario_id
+recompensa.coruja_id
+recompensa.criado_em
+
+viveiro.usuario_id
+
+nota.usuario_id
+
+consulta_sabio.usuario_id
+
+item_revisao.usuario_id
+```
+
+Também considerar `ativo` combinado com os campos de busca mais frequentes quando fizer sentido.
+
+---
+
+# 37. ORGANIZAÇÃO MODULAR
+
+Organizar o backend aproximadamente assim:
+
+```text
+modules/
+
+user/
+    Pessoa
+    Usuario
+    PreferenciaUsuario
+
+study/
+    SessaoEstudo
+    ConteudoSessao
+    Nota
+    Destaque
+
+learning/
+    Trilha
+    Modulo
+    Conteudo
+    ProgressoTrilha
+
+quiz/
+    Quiz
+    Questao
+    Alternativa
+    TentativaQuiz
+    RespostaQuestao
+
+gamification/
+    TipoOvo
+    OvoUsuario
+    Coruja
+    CorujaUsuario
+    Recompensa
+    Viveiro
+    DecoracaoViveiro
+    Conquista
+    ConquistaUsuario
+
+sage/
+    ConsultaSabio
+
+review/
+    ItemRevisao
+```
+
+Cada módulo pode possuir:
+
+```text
+controller/
+service/
+repository/
+domain/
+dto/
+mapper/
+```
+
+Não criar um módulo separado para cada tabela.
+
+---
+
+# 38. JPA
+
+Preferir relacionamentos:
+
+```java
+@ManyToOne(fetch = FetchType.LAZY)
+@OneToOne(fetch = FetchType.LAZY)
+@OneToMany(fetch = FetchType.LAZY)
+```
+
+quando apropriado.
+
+Não utilizar `EAGER` indiscriminadamente.
+
+Evitar relacionamentos bidirecionais quando não forem necessários.
+
+Nunca retornar entidades JPA diretamente pelo controller.
+
+---
+
+# 39. DTOs
+
+Criar DTOs separados das entidades.
+
+Não colocar regras de obrigatoriedade nos DTOs ainda, exceto quando tecnicamente necessário para o identificador de uma operação específica.
+
+Não utilizar:
+
+```java
+@NotBlank
+@NotNull
+```
+
+em campos do domínio apenas por suposição.
+
+A obrigatoriedade funcional será definida posteriormente a partir das telas e fluxos.
+
+---
+
+# 40. FLYWAY
+
+Criar as migrations necessárias respeitando as migrations existentes.
+
+Antes de criar uma migration nova:
+
+1. verifique qual é a última versão existente;
+2. utilize a próxima numeração disponível.
+
+Não assumir automaticamente:
+
+```text
+V2
+```
+
+ou qualquer número.
+
+Flyway deve ser a única fonte de criação/alteração do schema.
+
+Não utilizar:
+
+```text
+ddl-auto=create
+ddl-auto=update
+```
+
+Utilizar Hibernate somente para validação do schema.
+
+---
+
+# 41. NOMENCLATURA DO BANCO
+
+Utilizar `snake_case`.
+
+Exemplos:
+
+```text
+pessoa
+usuario
+preferencia_usuario
+sessao_estudo
+conteudo_sessao
+trilha
+modulo
+conteudo
+progresso_trilha
+quiz
+questao
+alternativa
+tentativa_quiz
+resposta_questao
+tipo_ovo
+ovo_usuario
+coruja
+coruja_usuario
+recompensa
+viveiro
+decoracao_viveiro
+nota
+destaque
+consulta_sabio
+item_revisao
+conquista
+conquista_usuario
+```
+
+Campos:
+
+```text
+criado_em
+atualizado_em
+excluido_em
+usuario_id
+coruja_id
+sessao_estudo_id
+```
+
+---
+
+# 42. NÃO IMPLEMENTAR AINDA
+
+Não implementar nesta etapa:
+
+* autenticação completa;
+* JWT;
+* integração com IA;
+* RAG;
+* algoritmo de escolha de coruja;
+* regras definitivas de recompensa;
+* algoritmo de choque do ovo;
+* repetição espaçada avançada;
+* ranking;
+* moedas;
+* fusão de corujas;
+* marketplace;
+* comunidade;
+* notificações.
+
+Criar apenas o modelo necessário para suportar essas funcionalidades futuramente.
+
+---
+
+# 43. VALIDAÇÃO FINAL
+
+Antes de considerar concluído:
+
+1. criar entities;
+2. criar enums;
+3. configurar relacionamentos;
+4. criar migrations;
+5. criar Foreign Keys;
+6. criar índices;
+7. criar repositories;
+8. criar DTOs;
+9. criar mappers;
+10. criar services básicos;
+11. implementar soft delete;
+12. compilar o projeto;
+13. executar os testes;
+14. executar as migrations no PostgreSQL;
+15. iniciar Spring Boot;
+16. garantir que Hibernate e Flyway estejam consistentes.
+
+Corrigir todos os erros encontrados.
+
+---
+
+# 44. REGRA FINAL
+
+As três regras mais importantes desta implementação são:
+
+### 1.
+
+TODAS as entidades possuem delete lógico.
+
+Nenhuma exclusão normal deverá remover fisicamente registros do banco.
+
+### 2.
+
+Somente:
+
+```text
+id
+criado_em
+```
+
+são obrigatórios no banco.
+
+Todos os demais campos devem aceitar NULL.
+
+### 3.
+
+Criar a entidade:
+
+```text
+RECOMPENSA
+```
+
+para registrar explicitamente recompensas concedidas ao usuário e permitir seu vínculo com a `CORUJA`, além da sessão e ovo que eventualmente deram origem à recompensa.
+
+Não altere essas três regras por considerar outro modelo mais convencional.
