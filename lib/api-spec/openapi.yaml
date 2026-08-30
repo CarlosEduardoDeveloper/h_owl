@@ -1,0 +1,59 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: system
+    description: Technical system operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /v1/system/status:
+    get:
+      operationId: getSystemStatus
+      tags: [system]
+      summary: System integration status
+      description: Returns the minimal status used to verify mobile to backend communication
+      responses:
+        "200":
+          description: System is available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemStatus"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    SystemStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [UP]
+      required:
+        - status
+
