@@ -13,18 +13,37 @@ import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
 import { useHome } from '@/features/home/useHome';
+import { useOwlSanctuary, OwlKey } from '@/context/OwlContext';
 
 const CURSO_PADRAO_1 = { titulo: 'Livro de Mateus', progresso: 68 };
 const CURSO_PADRAO_2 = { titulo: 'Glossário Judaico', progresso: 34 };
+
+const OWL_ASSETS: Record<OwlKey, any> = {
+  coruja1: require('@/assets/images/coruja1.png'),
+  coruja2: require('@/assets/images/coruja2.png'),
+  coruja3: require('@/assets/images/coruja3.png'),
+};
+
+const PERCH_POSITIONS = [
+  { top: '22%', left: '20%' },
+  { top: '24%', right: '20%' },
+  { top: '48%', left: '18%' },
+  { top: '50%', right: '18%' },
+  { top: '38%', left: '42%' },
+  { top: '65%', left: '30%' },
+  { top: '66%', right: '30%' },
+];
 
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const { data: resumo } = useHome();
+  const { hatchedOwls } = useOwlSanctuary();
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showFocusSheet, setShowFocusSheet] = useState(false);
+  const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
 
   const userName = user?.displayName?.split(' ')[0] || 'Estudante';
   const userInitials = user?.avatarInitials || 'CS';
@@ -48,13 +67,17 @@ export default function HomeScreen() {
 
   const handleStartFocus = (mode: string) => {
     setShowFocusSheet(false);
-    router.push({
-      pathname: '/(tabs)/focus',
-      params: {
-        intencao: mode === 'direcionado' ? 'TRILHA' : 'LEITURA_LIVRE',
-        referenciaUsfm: mode === 'direcionado' ? 'MAT.1.1' : 'JHN.3.16',
-      },
-    });
+    if (mode === 'direcionado') {
+      router.push('/study');
+    } else {
+      router.push({
+        pathname: '/(tabs)/focus',
+        params: {
+          intencao: 'LEITURA_LIVRE',
+          referenciaUsfm: 'JHN.3.16',
+        },
+      });
+    }
   };
 
   return (
@@ -113,54 +136,113 @@ export default function HomeScreen() {
             style={styles.sanctuaryImage}
             resizeMode="contain"
           />
+
+          {/* Render Earned Owls Perched on Branches / Platforms */}
+          {hatchedOwls.map((owl, index) => {
+            const position = PERCH_POSITIONS[index % PERCH_POSITIONS.length];
+            const owlSource = OWL_ASSETS[owl.owlKey] || OWL_ASSETS.coruja1;
+            const isTooltipOpen = activeTooltipId === owl.id;
+
+            return (
+              <Pressable
+                key={owl.id}
+                style={({ pressed }) => [
+                  styles.perchedOwlWrapper,
+                  position as any,
+                  { transform: [{ scale: pressed ? 0.92 : 1 }] },
+                ]}
+                onPress={() => setActiveTooltipId(isTooltipOpen ? null : owl.id)}
+              >
+                {/* Speech Bubble Tooltip */}
+                {isTooltipOpen && (
+                  <View style={styles.owlSpeechBubble}>
+                    <Text style={styles.owlSpeechText}>{owl.name} 🦉✨</Text>
+                  </View>
+                )}
+
+                <Image
+                  source={owlSource}
+                  style={styles.perchedOwlImage}
+                  resizeMode="contain"
+                />
+              </Pressable>
+            );
+          })}
         </View>
 
         {/* Continue Aprendendo Section */}
         <View style={styles.learningSection}>
-          <Text style={styles.sectionTitle}>CONTINUE APRENDENDO</Text>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>CONTINUE APRENDENDO</Text>
+            <Pressable onPress={() => router.push('/study')}>
+              <Text style={styles.seeAllText}>Ver todos ›</Text>
+            </Pressable>
+          </View>
 
-          {/* Course Card 1: Livro de Mateus */}
+          {/* Directed Study 1: Jesus, nosso socorro nas crises */}
           <Pressable
             style={({ pressed }) => [
               styles.courseCard,
-              { opacity: pressed ? 0.95 : 1 },
+              { opacity: pressed ? 0.95 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
             ]}
-            onPress={() => setShowFocusSheet(true)}
+            onPress={() =>
+              router.push({
+                pathname: '/(tabs)/focus',
+                params: {
+                  topicId: '1',
+                  topicTitle: 'Jesus, nosso socorro nas crises',
+                  autoStart: 'true',
+                },
+              })
+            }
           >
-            <View style={[styles.courseIconCircle, { backgroundColor: '#FDE8E0' }]}>
-              <Feather name="book-open" size={20} color="#ED5B0A" />
+            <View style={[styles.courseIconCircle, { backgroundColor: '#FDF3D7' }]}>
+              <Text style={styles.cardEmoji}>🙏</Text>
             </View>
             <View style={styles.courseContent}>
-              <Text style={styles.courseTitle}>{curso1Titulo}</Text>
+              <Text style={styles.courseTitle}>Jesus, nosso socorro nas crises</Text>
+              <Text style={styles.courseSubtitle}>O socorro de Deus nunca falha</Text>
               <View style={styles.progressRow}>
                 <View style={styles.progressBarBg}>
-                  <View style={[styles.progressBarFill, { width: `${curso1Progresso}%`, backgroundColor: '#ED5B0A' }]} />
+                  <View style={[styles.progressBarFill, { width: '100%', backgroundColor: '#D97706' }]} />
                 </View>
-                <Text style={styles.progressPercent}>{curso1Progresso}%</Text>
+                <Text style={styles.progressPercent}>100%</Text>
               </View>
             </View>
+            <Feather name="chevron-right" size={20} color="#9CA3AF" />
           </Pressable>
 
-          {/* Course Card 2: Glossário Judaico */}
+          {/* Directed Study 2: Amizades improváveis */}
           <Pressable
             style={({ pressed }) => [
               styles.courseCard,
-              { opacity: pressed ? 0.95 : 1 },
+              { opacity: pressed ? 0.95 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
             ]}
-            onPress={() => setShowFocusSheet(true)}
+            onPress={() =>
+              router.push({
+                pathname: '/(tabs)/focus',
+                params: {
+                  topicId: '2',
+                  topicTitle: 'Amizades improváveis',
+                  autoStart: 'true',
+                },
+              })
+            }
           >
-            <View style={[styles.courseIconCircle, { backgroundColor: '#F0E8FF' }]}>
-              <Feather name="book-open" size={20} color="#7C3AED" />
+            <View style={[styles.courseIconCircle, { backgroundColor: '#EDE9FE' }]}>
+              <Text style={styles.cardEmoji}>👥</Text>
             </View>
             <View style={styles.courseContent}>
-              <Text style={styles.courseTitle}>{curso2Titulo}</Text>
+              <Text style={styles.courseTitle}>Amizades improváveis</Text>
+              <Text style={styles.courseSubtitle}>Olhar além das aparências</Text>
               <View style={styles.progressRow}>
                 <View style={styles.progressBarBg}>
-                  <View style={[styles.progressBarFill, { width: `${curso2Progresso}%`, backgroundColor: '#7C3AED' }]} />
+                  <View style={[styles.progressBarFill, { width: '45%', backgroundColor: '#8B5CF6' }]} />
                 </View>
-                <Text style={styles.progressPercent}>{curso2Progresso}%</Text>
+                <Text style={styles.progressPercent}>45%</Text>
               </View>
             </View>
+            <Feather name="chevron-right" size={20} color="#9CA3AF" />
           </Pressable>
         </View>
       </ScrollView>
@@ -328,21 +410,69 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 8,
+    position: 'relative',
+    height: 290,
+    width: '100%',
+    borderRadius: 24,
+    overflow: 'hidden',
   },
   sanctuaryImage: {
     width: '100%',
     height: 290,
     borderRadius: 24,
   },
+  perchedOwlWrapper: {
+    position: 'absolute',
+    width: 52,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  perchedOwlImage: {
+    width: 48,
+    height: 48,
+  },
+  owlSpeechBubble: {
+    position: 'absolute',
+    top: -26,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FDE8D0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+    zIndex: 20,
+  },
+  owlSpeechText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#1E1B38',
+  },
   learningSection: {
     marginTop: 24,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '800',
     letterSpacing: 1.2,
     color: '#1E1B38',
-    marginBottom: 16,
+  },
+  seeAllText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#ED5B0A',
   },
   courseCard: {
     backgroundColor: '#FFFFFF',
@@ -359,19 +489,28 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   courseIconCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  cardEmoji: {
+    fontSize: 22,
   },
   courseContent: {
     flex: 1,
   },
   courseTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: '#1E1B38',
+    marginBottom: 2,
+  },
+  courseSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#8C7C6D',
     marginBottom: 8,
   },
   progressRow: {

@@ -69,6 +69,27 @@ export default function ChatScreen() {
           )}
         />
 
+        {/* Suggested Question Chip */}
+        <View style={styles.suggestionRow}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.suggestionChip,
+              { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+            ]}
+            onPress={() => {
+              const questao = 'O que a palavra Verbo significa originalmente?';
+              setInputText('');
+              void enviarMensagem(questao);
+            }}
+          >
+            <Feather name="help-circle" size={14} color="#ED5B0A" />
+            <Text style={styles.suggestionText}>
+              "O que a palavra Verbo significa originalmente?"
+            </Text>
+            <Feather name="arrow-up-right" size={14} color="#ED5B0A" />
+          </Pressable>
+        </View>
+
         {/* Input Bar */}
         <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, 90) }]}>
           <TextInput
@@ -161,6 +182,27 @@ const styles = StyleSheet.create({
   userText: {
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  suggestionRow: {
+    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
+  suggestionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FDF3D7',
+    borderWidth: 1.5,
+    borderColor: '#ED5B0A',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 8,
+  },
+  suggestionText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#ED5B0A',
   },
   inputBar: {
     flexDirection: 'row',

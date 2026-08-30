@@ -58,7 +58,7 @@ const colors = {
     // Stat Cards
     statOfensivaBg: '#FDE3D2',
     statXpBg: '#D7F9EB',
-    statRanquingBg: '#EBE4FF',
+    statRankingBg: '#EBE4FF',
 
     // Progress Colors
     orangeProgress: '#ED5B0A',

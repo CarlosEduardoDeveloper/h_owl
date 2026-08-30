@@ -17,6 +17,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { AuthGate } from '@/components/AuthGate';
 import { AuthProvider } from '@/context/AuthContext';
 import { BibleReadingProvider } from '@/context/BibleReadingContext';
+import { OwlProvider } from '@/context/OwlContext';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -30,6 +31,8 @@ function RootLayoutNav() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="study" options={{ headerShown: false }} />
+        <Stack.Screen name="quiz" options={{ headerShown: false }} />
       </Stack>
     </AuthGate>
   );
@@ -56,13 +59,15 @@ export default function RootLayout() {
       <ErrorBoundary>
         <AuthProvider>
           <BibleReadingProvider>
-            <QueryClientProvider client={queryClient}>
-              <GestureHandlerRootView style={{ flex: 1 }}>
-                <KeyboardProvider>
-                  <RootLayoutNav />
-                </KeyboardProvider>
-              </GestureHandlerRootView>
-            </QueryClientProvider>
+            <OwlProvider>
+              <QueryClientProvider client={queryClient}>
+                <GestureHandlerRootView style={{ flex: 1 }}>
+                  <KeyboardProvider>
+                    <RootLayoutNav />
+                  </KeyboardProvider>
+                </GestureHandlerRootView>
+              </QueryClientProvider>
+            </OwlProvider>
           </BibleReadingProvider>
         </AuthProvider>
       </ErrorBoundary>

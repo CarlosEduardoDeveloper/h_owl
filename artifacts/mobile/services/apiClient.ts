@@ -36,6 +36,12 @@ function resolveErrorMessage(data: unknown, status: number): string {
       return message;
     }
   }
+  if (status === 404) {
+    return 'Servidor ou recurso não encontrado (HTTP 404)';
+  }
+  if (status === 401) {
+    return 'Credenciais inválidas';
+  }
   return `Erro HTTP ${status}`;
 }
 

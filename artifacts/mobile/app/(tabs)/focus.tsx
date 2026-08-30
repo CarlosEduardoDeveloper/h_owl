@@ -5,16 +5,31 @@ import {
   Modal,
   PanResponder,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import Svg, { Circle, G } from 'react-native-svg';
+import { useOwlSanctuary, OwlKey } from '@/context/OwlContext';
+import { YouVersionBibleReader } from '@/components/YouVersionBibleReader';
+
+const OWL_MAP: Record<OwlKey, any> = {
+  coruja1: require('@/assets/images/coruja1.png'),
+  coruja2: require('@/assets/images/coruja2.png'),
+  coruja3: require('@/assets/images/coruja3.png'),
+};
+
+const OWL_KEYS: OwlKey[] = ['coruja1', 'coruja2', 'coruja3'];
 
 export default function FocusScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ topicId?: string; topicTitle?: string; autoStart?: string }>();
+  const { addHatchedOwl, addCoins, coins } = useOwlSanctuary();
 
   const [targetMinutes, setTargetMinutes] = useState(25);
   const [secondsLeft, setSecondsLeft] = useState(25 * 60);
@@ -23,6 +38,17 @@ export default function FocusScreen() {
   const [showFocusSheet, setShowFocusSheet] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [focusMode, setFocusMode] = useState<'livre' | 'direcionado' | null>(null);
+  const [showOwlHatchedModal, setShowOwlHatchedModal] = useState(false);
+  const [hatchedOwlImage, setHatchedOwlImage] = useState<any>(null);
+
+  // Auto start timer when coming from a directed study topic
+  useEffect(() => {
+    if (params.autoStart === 'true' || params.topicId) {
+      setFocusMode('direcionado');
+      setHasStartedFocus(true);
+      setIsTimerRunning(true);
+    }
+  }, [params.autoStart, params.topicId]);
 
   // SVG Ring dimensions
   const ringSize = 280;
@@ -47,8 +73,18 @@ export default function FocusScreen() {
           if (prev <= 1) {
             setIsTimerRunning(false);
             setHasStartedFocus(false);
+
+            // Navigate to Quiz for completed study topic (Estudo Livre goes to João 1)
+            router.push({
+              pathname: '/quiz',
+              params: {
+                topicId: params.topicId || (focusMode === 'direcionado' ? '1' : 'JHN_1'),
+                topicTitle: params.topicTitle || (focusMode === 'direcionado' ? 'Estudo Direcionado' : 'Estudo Livre: João 1'),
+              },
+            });
+
             setFocusMode(null);
-            Alert.alert('Parabéns! 🎉', 'Seu tempo de estudo acabou e sua coruja chocou com sucesso!');
+
             return targetMinutes * 60;
           }
           return prev - 1;
@@ -58,7 +94,7 @@ export default function FocusScreen() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isTimerRunning, targetMinutes]);
+  }, [isTimerRunning, targetMinutes, params.topicId, params.topicTitle, focusMode, router]);
 
   // Touch handler to convert angle around center to 1-60 minutes
   const updateMinutesFromTouch = (locationX: number, locationY: number) => {
@@ -113,9 +149,13 @@ export default function FocusScreen() {
 
   const handleSelectFocusMode = (mode: 'livre' | 'direcionado') => {
     setShowFocusSheet(false);
-    setFocusMode(mode);
-    setHasStartedFocus(true);
-    setIsTimerRunning(true);
+    if (mode === 'direcionado') {
+      router.push('/study');
+    } else {
+      setFocusMode(mode);
+      setHasStartedFocus(true);
+      setIsTimerRunning(true);
+    }
   };
 
   const handlePauseResume = () => {
@@ -144,7 +184,7 @@ export default function FocusScreen() {
 
         <View style={styles.coinBadge}>
           <Text style={styles.coinIcon}>🪙</Text>
-          <Text style={styles.coinText}>55</Text>
+          <Text style={styles.coinText}>{coins}</Text>
         </View>
       </View>
 
@@ -153,7 +193,7 @@ export default function FocusScreen() {
         {/* Title */}
         <Text style={styles.headerTitle}>
           {hasStartedFocus
-            ? `${focusMode === 'direcionado' ? 'Estudo Direcionado' : 'Estudo Livre'}\n${isTimerRunning ? 'Foco em andamento ⏳' : 'Sessão Pausada ⏸️'}`
+            ? `${params.topicTitle ? params.topicTitle : focusMode === 'direcionado' ? 'Estudo Direcionado' : 'Estudo Livre'}\n${isTimerRunning ? 'Foco em andamento ⏳' : 'Sessão Pausada ⏸️'}`
             : 'Comece seu estudo\ne choque sua coruja!'}
         </Text>
 
@@ -269,6 +309,11 @@ export default function FocusScreen() {
             </Pressable>
           </View>
         )}
+
+        {/* YouVersion Bible Reader during Estudo Livre */}
+        {hasStartedFocus && focusMode === 'livre' && (
+          <YouVersionBibleReader />
+        )}
       </View>
 
       {/* Bottom Sheet Focus Mode Choice Modal */}
@@ -352,6 +397,60 @@ export default function FocusScreen() {
                 <Text style={styles.confirmCancelBtnText}>Sim, Cancelar</Text>
               </Pressable>
             </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Owl Hatched Pop-up Modal */}
+      <Modal
+        visible={showOwlHatchedModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowOwlHatchedModal(false)}
+      >
+        <Pressable
+          style={styles.modalOverlayCenter}
+          onPress={() => setShowOwlHatchedModal(false)}
+        >
+          <Pressable style={styles.owlHatchedCard} onPress={(e) => e.stopPropagation()}>
+            {/* Sparkle Header Badge */}
+            <View style={styles.celebrationBadge}>
+              <Text style={styles.celebrationBadgeText}>✨ FOCO CONCLUÍDO! ✨</Text>
+            </View>
+
+            {/* Owl Image */}
+            <View style={styles.owlImageWrapper}>
+              {hatchedOwlImage && (
+                <Image
+                  source={hatchedOwlImage}
+                  style={styles.hatchedOwlImage}
+                  resizeMode="contain"
+                />
+              )}
+            </View>
+
+            {/* Title */}
+            <Text style={styles.owlHatchedTitle}>Parabéns, sua coruja nasceu!</Text>
+            <Text style={styles.owlHatchedSubtitle}>
+              Você concluiu sua sessão de estudo com sucesso!
+            </Text>
+
+            {/* +5 Coins Reward Badge */}
+            <View style={styles.rewardBadge}>
+              <Text style={styles.rewardCoinEmoji}>🪙</Text>
+              <Text style={styles.rewardText}>+5 moedas</Text>
+            </View>
+
+            {/* Collect Button */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.collectButton,
+                { opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+              ]}
+              onPress={() => setShowOwlHatchedModal(false)}
+            >
+              <Text style={styles.collectButtonText}>Incrível! 🎉</Text>
+            </Pressable>
           </Pressable>
         </Pressable>
       </Modal>
@@ -624,5 +723,97 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+
+  /* Owl Hatched Pop-up Modal Styles */
+  owlHatchedCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    paddingVertical: 28,
+    paddingHorizontal: 24,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  celebrationBadge: {
+    backgroundColor: '#FEF3D7',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    marginBottom: 16,
+  },
+  celebrationBadgeText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#D97706',
+    letterSpacing: 0.5,
+  },
+  owlImageWrapper: {
+    width: 200,
+    height: 200,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  hatchedOwlImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
+  },
+  owlHatchedTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#1E1B38',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  owlHatchedSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#8C7C6D',
+    textAlign: 'center',
+    marginBottom: 18,
+  },
+  rewardBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF9C3',
+    borderWidth: 1.5,
+    borderColor: '#FDE047',
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    gap: 8,
+    marginBottom: 24,
+  },
+  rewardCoinEmoji: {
+    fontSize: 22,
+  },
+  rewardText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#854D0E',
+  },
+  collectButton: {
+    backgroundColor: '#ED5B0A',
+    paddingVertical: 16,
+    borderRadius: 24,
+    width: '100%',
+    alignItems: 'center',
+    shadowColor: '#ED5B0A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  collectButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
   },
 });
